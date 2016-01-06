@@ -1,0 +1,72 @@
+/****************************************************************
+ * Taken from: https://github.com/CliffCloud/Leaflet.EasyButton *
+ ***************************************************************/
+.leaflet-bar button {
+	background-color: #007dba;
+	border: none;
+	border-bottom: 1px solid #ccc;
+	width: 38px;
+	height: 44px;
+	line-height: 44px;
+	display: block;
+	text-align: center;
+	text-decoration: none;
+	color: #ffffff;
+	overflow: hidden;
+}
+
+.leaflet-bar button:hover {
+	background-color: #757575;
+}
+
+.leaflet-bar button:first-of-type {
+	border-top-left-radius: 4px;
+	border-top-right-radius: 4px;
+}
+
+.leaflet-bar button:last-of-type {
+	border-bottom-left-radius: 4px;
+	border-bottom-right-radius: 4px;
+	border-bottom: none;
+}
+
+.leaflet-bar.disabled,
+.leaflet-bar button.disabled {
+	cursor: default;
+	pointer-events: none;
+	opacity: .4;
+}
+
+.state-slide-out-div{
+	font-size: 32px;
+	line-height: 42px;
+	position: relative;
+}
+
+.state-slide-in-div{
+	font-size: 32px;
+	line-height: 42px;
+	position: relative;
+}
+
+.easy-button-button .button-state{
+	display: block;
+	width: 100%;
+	height: 100%;
+	position: relative;
+}
+
+.leaflet-touch .leaflet-bar button {
+	width: 30px;
+	height: 44px;
+	line-height: 44px;
+}
+
+.easy-button-container  {
+	position: relative;
+	right: 12px;
+	border-top-left-radius: 0;
+	border-bottom-left-radius: 0;
+	box-shadow: 3px 2px 2px rgba(0, 0, 0, 0.25), 3px -1px 2px rgba(0, 0, 0, 0.25), -2px 0px 2px rgba(255, 255, 255, 1);
+}
+

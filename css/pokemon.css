@@ -1,0 +1,30 @@
+.icon {
+	width: 64px;
+	height: 64px;
+	background-size: contain;
+	background-repeat: no-repeat;
+}
+
+.bulbasaur {
+	background-image: url(../img/sprites/1.png);
+	background-size: contain;
+	background-repeat: no-repeat;
+}
+
+.charmander {
+	background-image: url(../img/sprites/4.png);
+	background-size: contain;
+	background-repeat: no-repeat;
+}
+
+.squirtle {
+	background-image: url(../img/sprites/7.png);
+	background-size: contain;
+	background-repeat: no-repeat;
+}
+
+.pikachu {
+	background-image: url(../img/sprites/25.png);
+	background-size: contain;
+	background-repeat: no-repeat;
+}

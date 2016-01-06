@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="format-detection" content="telephone=no" />
+  <meta name="msapplication-tap-highlight" content="no" />
+  <!-- WARNING: for iOS 7, remove the width=device-width and height=device-height attributes. See https://issues.apache.org/jira/browse/CB-4323 -->
+  <!--<meta name="viewport" content="user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, width=device-width, height=device-height, target-densitydpi=device-dpi" />-->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, target-densitydpi=medium-dpi, user-scalable=0" />
+  <link rel='shortcut icon' href='favicon.ico' type='image/x-icon'/ >
+  <link rel="stylesheet" type="text/css" href="css/style.css" />
+  <link rel="stylesheet" type="text/css" href="css/font-awesome.min.css" />
+  <title>Pokemon - Gotta Chug 'em all!</title>
+  
+  <script type="text/javascript" src="js/jquery-2.1.4.min.js"></script>
+  <!-- map stuff -->
+  <link rel="stylesheet" href="css/maps/leaflet.css" />
+  <script src="js/maps/leaflet.js"></script>
+  <script src="js/maps/leaflet.ajax.min.js"></script>
+  <link rel="stylesheet" href="css/maps/mapstyle.css" />
+  <script src='js/maps/leaflet-sidebar.js'></script>
+  <link href='css/maps/leaflet-sidebar.css' rel='stylesheet' />
+  <script type="text/javascript" src="js/maps/leaflet.fullscreen.js"></script>
+  <link href='css/maps/leaflet.fullscreen.css' rel='stylesheet' />
+  <script type="text/javascript" src="js/ddslick.js"></script>
+    <script type="text/javascript" src="js/config.js"></script>
+    <link href='css/pokemon.css' rel='stylesheet' />
+
+  <!-- map stuff end -->
+</head>
+
+<body>
+<iframe id="ytplayer" width="560" height="315" src="https://www.youtube.com/embed/qyXTgqJtoGM?autoplay=1&modestbranding=1&controls=0&loop=1&showinfo=0&rel=0&playlist=qyXTgqJtoGM" frameborder="0" allowfullscreen></iframe>
+<!-- game intro -->
+<div class="intro-container">
+    <div class="pokemonTitle"></div>
+    <div class="board-container">
+        <div class="pokemonTitle-inner" id="selectBoard-original"><h2>Original</h2><img src="img/board-original.png" ></div>
+        <div class="pokemonTitle-inner" id="selectBoard-goldsilver"><h2>Gold Silver</h2><img src="img/board-gold-silver.png" ></div>
+    </div>
+    <!-- forms / info -->
+        <div class="forms-container" style="display: none">
+            <form id='playerSetup' >
+                <h2>Who's playing?</h2>
+                <input id="playerNames" name="playerNames" type="text" placeholder="Enter a name">
+                
+                <div id="playerList">
+                    <table class="nameList">
+                        
+                    </table>
+                </div>
+            <button class="btn-bottomright" type="reset" id="namesEntered">I'm done adding names</button>
+            </form>
+            
+            <form id="playerIcons" style="display: none">
+                <h2 id="playerNamePickPokemon">Pick your favourite Pokemon!</h2>
+                <table class="pokemonSelect">
+                    <tr>
+                        <td class="bulbasaur"></td>
+                        <td class="charmander"></td>
+                        <td class="squirtle"></td>
+                        <td class="pikachu"></td>
+                    </tr>
+                </table>
+                          
+            <button class="btn-bottomright" type="reset" id="pokemonSelectionComplete">Next</button>
+            </form>
+            
+            <form id='gameConfig' style="display: none">
+                <h2>Game Configuration</h2>
+                <table>
+                <tr>
+                    <th width="70%"></th>
+                    <th>On</th>
+                    <th>Off</th>
+                <tr>
+                    <td><label for="trainerBattles">Trainer battles on/off</label></td>
+                    <td><input type="radio" name="trainerBattles" value="on" checked></td>
+                    <td><input type="radio" name="trainerBattles" value="off"></td>
+                </tr>
+                <tr>
+                    <td><label for="offTable">Dice roll off the table</label></td>
+                    <td><input type="radio" name="offTable" value="on" checked></td>
+                    <td><input type="radio" name="offTable" value="off"></td>
+                </tr>
+                <tr>
+                    <td><label for="ssAnne">Cap missed turns at 1<br /> Drink more instead...</label></td>
+                    <td><input type="radio" name="ssAnne" value="on"></td>
+                    <td><input type="radio" name="ssAnne" value="off" checked></td>
+                </tr>   
+                <tr>
+                    <td><label for="evolve">Pokemon evolve</label></td>
+                    <td><input type="radio" name="evolve" value="on" checked></td>
+                    <td><input type="radio" name="evolve" value="off"></td>
+                </tr>                               
+                </table>
+                 <br />
+                <button  class="btn-bottomright"  type="reset" id="gameStart">Ready to play!</button>
+            </form>
+        </div>    
+    <!-- forms / info end -->    
+</div>    
+<!-- game intro end -->
+
+<div id="map-container">
+
+    <div id='map' class='sidebar-map map' style="display: none">	
+    <div id="sidebar" class="sidebar collapsed">
+        <!-- Nav tabs -->
+        <div class="sidebar-tabs">
+            <ul role="tablist">
+                <li id="infoTab"><a href="#info" role="tab" title="Game setup"><i class="fa fa-info-circle"></i></a></li>
+            </ul>
+            <ul role="tablist">
+                <li id="settingsTab"><a href="#settings" role="tab" title="Settings"><i class="fa fa-gear"></i></a></li>
+            </ul>
+        </div>
+
+        <!-- Tab panes -->
+        <div class="sidebar-content">
+            <div class="sidebar-pane" id="info">
+                <div class="sidebar-header">Game setup<div class="sidebar-close"><i class="fa fa-angle-left"></i></div>
+                </div>
+
+            </div>
+            <div class="sidebar-pane" id="settings">
+                <div class="sidebar-header">Settings<div class="sidebar-close"><i class="fa fa-angle-left"></i></div></div>
+                <div class="legend-container"></div>
+            </div>
+
+        </div>
+    </div>
+    </div>
+</div>    
+        
+    
+</body>
+</html>

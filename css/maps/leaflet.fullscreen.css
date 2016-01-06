@@ -1,0 +1,57 @@
+.leaflet-control-fullscreen a {
+
+  background-size:26px 52px;
+  }
+  .leaflet-touch .leaflet-control-fullscreen a {
+    background-position: 2px 2px;
+    }
+  .leaflet-fullscreen-on .leaflet-control-fullscreen a {
+    background-position:0 -26px;
+    }
+  /*.leaflet-touch.leaflet-fullscreen-on .leaflet-control-fullscreen a {
+    background: #fff;
+    position:fixed;
+    left:50%;
+    top: 2%;
+    width: 150px;
+    height: 44px;
+    border: 2px solid rgba(0,0,0,0.2);       
+    font-size: 150%;
+    padding: 6px;
+    margin-left: -90px;
+    }*/
+    
+
+  .leaflet-fullscreen-on {
+  width:100%!important;
+  height:100%!important;
+    }
+
+.leaflet-container:-webkit-full-screen {
+  width:100%!important;
+  height:100%!important;
+  }
+.leaflet-pseudo-fullscreen {
+  position: absolute!important;
+  width:100%!important;
+  height:100%!important;
+  top: 0px!important;
+  left: 0px!important;
+  z-index:99999;
+  }
+
+@media
+  (-webkit-min-device-pixel-ratio:2),
+  (min-resolution:192dpi) {
+    .leaflet-control-fullscreen a {
+
+    }
+    .leaflet-control-fullscreen a:before {
+        content: "\f065";
+        font-family: FontAwesome;
+        font-size: 12pt;
+        left:8px;
+        position:absolute;
+        top:0;
+    }
+  }

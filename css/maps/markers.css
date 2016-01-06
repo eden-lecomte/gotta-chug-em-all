@@ -1,0 +1,167 @@
+  /* marker styles for divIcons in maps */
+  /* -active is controlled in MapsPage.ss */
+  
+  /* when adding new markers you MUST follow existing naming convention of */ 
+  /* marker-TYPE and marker-TYPE-active */
+
+/* default blue/grey pin */  
+  .marker-default {
+    background-image: url(../../images/maps/markers/Blue-marker.png);
+    background-size: 100%;  
+  }
+  .marker-default:hover {
+    background-image: url(../../images/maps/markers/Grey-marker.png);
+    background-size: 100%;
+
+  }
+  .marker-default-active {
+    background-image: url(../../images/maps/markers/Grey-marker.png);
+    background-size: 100%;
+  }
+  
+/* CCC marker */
+  .marker-cccwhite {
+    background-image: url(../../images/maps/markers/ccc-white.png);
+    background-size: 100%;
+  }
+  .marker-cccwhite:hover {
+    background-image: url(../../images/maps/markers/ccc-white.png);
+    background-size: 100%;
+  }
+  .marker-cccwhite-active {
+    background-image: url(../../images/maps/markers/ccc-white.png);
+    background-size: 100%;
+  }  
+  
+/* Cluster adjustments */
+
+  .clusterMarker span {
+    position: relative;
+    top: -15px;
+    display: block;
+    color: #fff;
+    text-align: center;
+	  width: 20px;
+	  height: 20px;
+	  line-height: 20px;  
+    margin: 0 5px 0 5px;
+    background-color: #007dba;
+    text-align: center;
+    border-radius: 5px 5px 0 0;
+  }  
+  
+  
+/* parking markers */
+
+/* unrestricted parking */
+  .marker-parking {
+    background-image: url(../../images/maps/markers/P-blue.png);
+    background-size: 100%; 
+  }
+  .marker-parking:hover {
+    background-image: url(../../images/maps/markers/P-grey.png);
+    background-size: 100%;
+  }
+  .marker-parking-active {
+    background-image: url(../../images/maps/markers/P-grey.png);
+    background-size: 100%;
+  }
+  .marker-parking-circle {
+    background-image: url(../../images/maps/markers/P-blue-circle.png);
+    background-size: 25px;
+    background-repeat: no-repeat;
+    background-position: center;    
+  }  
+/* 60mins parking */  
+  .marker-p60 {
+    background-image: url(../../images/maps/markers/P60-blue.png);
+    background-size: 100%;
+  }
+  .marker-p60:hover {
+    background-image: url(../../images/maps/markers/P60-grey.png);
+    background-size: 100%;
+  }
+  .marker-p60-active {
+    background-image: url(../../images/maps/markers/P60-grey.png);
+    background-size: 100%;
+  }  
+/* 120mins parking */  
+  .marker-p120 {
+    background-image: url(../../images/maps/markers/P120-blue.png);
+    background-size: 100%;
+  }
+  .marker-p120:hover {
+    background-image: url(../../images/maps/markers/P120-grey.png);
+    background-size: 100%;
+  }
+  .marker-p120-active {
+    background-image: url(../../images/maps/markers/P120-grey.png);
+    background-size: 100%;
+  }    
+/* Mobility parking */  
+  .marker-pMobility {
+    background-image: url(../../images/maps/markers/Pdisabled-blue.png);
+    background-size: 100%;
+  }
+  .marker-pMobility:hover {
+    background-image: url(../../images/maps/markers/Pdisabled-grey.png);
+    background-size: 100%;
+  }
+  .marker-pMobility-active {
+    background-image: url(../../images/maps/markers/Pdisabled-grey.png);
+    background-size: 100%;
+  }   
+  .marker-pMobility-circle {
+    background-image: url(../../images/maps/markers/Disabled-blue-circle.png);
+    background-size: 25px;
+    background-repeat: no-repeat;
+    background-position: center;    
+  }       
+  
+/* Motorcycle parking */  
+  .marker-pMotorcycle {
+    background-image: url(../../images/maps/markers/Pmotorcycle-blue.png);
+    background-size: 100%;
+  }
+  .marker-pMotorcycle:hover {
+    background-image: url(../../images/maps/markers/Pmotorcycle-grey.png);
+    background-size: 100%;
+  }
+  .marker-pMotorcycle-active {
+    background-image: url(../../images/maps/markers/Pmotorcycle-grey.png);
+    background-size: 100%;
+  }    
+  .marker-pMotorcycle-circle {
+    background-image: url(../../images/maps/markers/Motorbike-blue-circle.png);
+    background-size: 25px;
+    background-repeat: no-repeat;
+    background-position: center;
+  }       
+  
+/* Taxi stand parking */  
+  .marker-pTaxi {
+    background-image: url(../../images/maps/markers/Taxi-blue.png);
+    background-size: 100%;
+  }
+  .marker-pTaxi:hover {
+    background-image: url(../../images/maps/markers/Taxi-grey.png);
+    background-size: 100%;
+  }
+  .marker-pTaxi-active {
+    background-image: url(../../images/maps/markers/Taxi-grey.png);
+    background-size: 100%;
+  }      
+    
+/* Taxi stand parking */  
+  .marker-parksmart {
+    background-image: url(../../images/maps/markers/Park-Smart-icon.png);
+    background-size: 100%;
+  }
+  .marker-parksmart:hover {
+    background-image: url(../../images/maps/markers/Park-Smart-icon-active.png);
+    background-size: 100%;
+  }
+  .marker-parksmart-active {
+    background-image: url(../../images/maps/markers/Park-Smart-icon-active.png);
+    background-size: 100%;
+  }       
