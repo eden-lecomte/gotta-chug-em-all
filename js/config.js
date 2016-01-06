@@ -79,11 +79,11 @@ $('#playerIcons > table > tbody > tr > td').on('click', function(){
             $('#playerNamePickPokemon').html(''+ playerArray[i].name + ', pick your favourite Pokemon!')
             $('#playerIcons').fadeIn();
         }); 
-    
-        
+        i += 1;        
     } else {
         return false;
-    }
+    };
+    if i
 });
 
 function updatePlayerName(i) {
@@ -254,7 +254,7 @@ var gameSquaresTemplate = {
         
         //silver squares
         silphCo: true,      // Begin each turn +2 drinks
-        
+        safariZone: true,   // Roll dice at start of each turn, then take turn
         
     }
 };
