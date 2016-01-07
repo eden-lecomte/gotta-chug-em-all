@@ -150,7 +150,7 @@ ul#tab li.activeTab {
   /* custom tweaks */
 .leaflet-map-pane {
 	/*position: absolute; */ 
-  z-index: 2 !important;
+  /*z-index: 2 !important;*/
 }
 
  .customMarker {

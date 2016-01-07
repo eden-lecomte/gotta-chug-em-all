@@ -1,3 +1,17 @@
+var map;
+var oms;
+var numPlayers = 0;
+var playerArray = [];
+var playerNames = new Array();
+var gameSettings = {};
+var pokeMarker = null; 
+var pokemonSelected;
+var markers = L.markerClusterGroup({ 
+                disableClusteringAtZoom: 4,
+                maxClusterRadius: 5,
+                spiderfyDistanceMultiplier: 3
+            });
+
 $( document ).ready(function() {
 // game init    
 
@@ -24,42 +38,48 @@ $('#selectBoard-goldsilver').on('click', function() {
 });
 
 //configuration
-var numPlayers = 0
-var playerArray = [];
+numPlayers = 0
+playerArray = [];
 
-var playerNames = new Array();
-var pokemonSelected = new Array();
+playerNames = new Array();
 
-var gameSettings = {};
+gameSettings = {};
 
 $('#playerSetup').on('submit', function(i) {
     var playerNamesInput = $(this).find("input[name^='playerNames']");
     var playerNamesVal = playerNamesInput.val();
-    var playerNamesString = playerNamesVal.toString();
+    if (playerNamesVal.length > 1) {
+        var playerNamesString = playerNamesVal.toString();
 
-    playerNames.push( ''+playerNamesString+'' );
-    numPlayers = playerNames.length;
-    playerArray.push(
-        player = {
-            name: playerNamesString,   
-            pokemon: null,
-            status: '',
-            square: 0,
-            drinks: 0,
-        });
-    console.log(playerArray);
-    
-    $('.nameList').append("<tr><td width='40%'><span>"+ playerNamesString +"</span></td>");
-    
-    playerNamesInput.val('');
-    playerNamesInput.attr('placeholder', 'Type another one!')
+        playerNames.push( ''+playerNamesString+'' );
+        numPlayers = playerNames.length;
+        playerArray.push(
+            player = {
+                name: playerNamesString,   
+                pokemon: '',
+                status: '',
+                coords: [-230, 45],
+                drinks: 0,
+                marker: null,
+            });
+        console.log(playerArray);
+        
+        $('.nameList').append("<tr><td width='40%'><span>"+ playerNamesString +"</span></td>");
+        
+        playerNamesInput.val('');
+        playerNamesInput.attr('placeholder', 'Type another one!')
 
-    console.log('Number of players ' + numPlayers)
+        console.log('Number of players ' + numPlayers)
 
-    return false;
+        return false;
+    }
+    else {
+        return false
+    }
 });
 
 //avatar selection
+var pokeCounter = 0;
 
 $('#namesEntered').on('click', function() {
     $('#playerSetup').slideUp('slow');
@@ -69,47 +89,49 @@ $('#namesEntered').on('click', function() {
 });
 
 $('#playerIcons > table > tbody > tr > td').on('click', function(){
-    var i = 1;
-    var _pokemonSelected = $(this).attr('class');
+
+    pokemonSelected = $(this).attr('class');
     if ( !$(this).hasClass('pokemonSelected') ){
-        pokemonSelected.push(_pokemonSelected);
+
+        playerArray[pokeCounter].pokemon = ''+ pokemonSelected +'';
+        playerArray[pokeCounter].marker = L.marker([playerArray[pokeCounter].coords[0], playerArray[pokeCounter].coords[1]], {
+                                                    icon: window[pokemonSelected]
+                                                });
+        markers.addLayer(playerArray[pokeCounter].marker);
         $(this).addClass('pokemonSelected');
+        pokeCounter += 1;        
         $('#playerIcons').fadeOut();
-        $('#playerIcons').promise().done(function(){
-            $('#playerNamePickPokemon').html(''+ playerArray[i].name + ', pick your favourite Pokemon!')
-            $('#playerIcons').fadeIn();
-        }); 
-    
-        
+        console.log(pokeCounter + 'vs' + numPlayers)
+        if ( pokeCounter < numPlayers ) { 
+            $('#playerIcons').promise().done(function(){
+                $('#playerNamePickPokemon').html(''+ playerArray[pokeCounter].name + ', pick your favourite Pokemon!')
+                $('#playerIcons').fadeIn();
+            });             
+        } else {
+            $('#playerIcons').slideUp('slow');
+            $('#gameConfig').slideDown('slow')
+        };
+
     } else {
         return false;
-    }
+    };
+
 });
 
-function updatePlayerName(i) {
-    
-}
-
-$('#pokemonSelectionComplete').on('click', function() {
-    $('#playerIcons').slideUp('slow');
-    $('#gameConfig').slideDown('slow')
-    return false;
-});
 
 $('#gameStart').on('click', function() {
     $('.intro-container').slideUp('slow');
     $('#map').slideDown('slow')
     map.invalidateSize();
     $('#ytplayer').remove()
+    gameStart();
     return false;
 });
 
 
-
-
 //map init
     
-var map = L.map('map', {
+map = new L.Map('map', {
     minZoom: 2,
     maxZoom: 4,
     center: [0, 0],
@@ -132,13 +154,31 @@ var bounds = new L.LatLngBounds(southWest, northEast);
 // so that it covers the entire map
 //L.imageOverlay(gameVariant, bounds).addTo(map);
 
-
-
 // tell leaflet that the map is exactly as big as the image
 map.setMaxBounds(bounds);
         
 var sidebar = L.control.sidebar('sidebar', {position: 'left'}).addTo(map); //sidebar panel
 var fullscreenControl = new L.control.fullscreen().addTo(map); // fullscreen control    
+
+//var options = {
+//    keepSpiderfied: true,
+//    nearbyDistance: 120
+//}
+//oms = new OverlappingMarkerSpiderfier(map, options);
+
+
+
+var gridOptions = {interval: 20,
+               showOriginLabel: true,
+               redraw: 'move',
+               zoomIntervals: [
+                {start: 0, end: 1, interval: 25},
+                {start: 2, end: 3, interval: 20},
+                {start: 4, end: 20, interval: 5}
+            ]};
+
+L.simpleGraticule(gridOptions).addTo(map);
+
     
 // resize left side map controls for sidebar
 $(window).resize(function() {
@@ -167,7 +207,22 @@ if (!L.Browser.touch) {
     L.DomEvent.on(div, 'touchstart', L.DomEvent.stopPropagation);	
 }
 
+
+map.on('zoomend', function() {
+  var currentZoom = map.getZoom();
+
+  var zoomStyles = [ 'null', 'null', '48px', '64px', '128px'];
+
+  $('.marker').css({
+      'width': zoomStyles[currentZoom],
+      'height': zoomStyles[currentZoom]
+  });
+
 });
+
+
+// NEED LAYERS I THINK????
+
 
 
 // TODO:
@@ -203,6 +258,7 @@ if (!L.Browser.touch) {
 var gameSquares = {
     square0: {
         text: 'Start',
+        latlng: [20, 30],
     },
     square1: {
         text: 'Rattata used Tackle! ... wait, you seriously rolled a 1?',
@@ -254,7 +310,7 @@ var gameSquaresTemplate = {
         
         //silver squares
         silphCo: true,      // Begin each turn +2 drinks
-        
+        safariZone: true,   // Roll dice at start of each turn, then take turn
         
     }
 };
@@ -280,4 +336,37 @@ var specialEffectsTemplate = {
     fearow: {},         // Drink same amount as previous turn
     graveler: {},       // Status effect - lose 2 turns, but no drinks
     
+}
+
+
+
+});
+
+
+function gameStart(){
+    setTimeout(function () {
+        map.invalidateSize();
+        map.addLayer(markers);
+        console.log(markers + 'added to map');
+        
+        var bounds = markers.getBounds(); // [1]
+        map.fitBounds(bounds); // [2]  
+    }, 500);
+}
+
+function TEST(){
+    setTimeout(function () {
+        map.invalidateSize();
+        geojson = L.geoJson(playerArray, {
+            pointToLayer: function (player) {
+                return L.marker(player.coords, {icon: player.pokemon})
+            }
+        })
+        markers.addLayer(geojson);
+        map.addLayer(markers);
+        console.log(markers + 'added to map');
+        
+        var bounds = markers.getBounds(); // [1]
+        map.fitBounds(bounds); // [2]  
+    }, 500);
 }

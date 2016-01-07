@@ -16,17 +16,32 @@
   
   <script type="text/javascript" src="js/jquery-2.1.4.min.js"></script>
   <!-- map stuff -->
-  <link rel="stylesheet" href="css/maps/leaflet.css" />
-  <script src="js/maps/leaflet.js"></script>
-  <script src="js/maps/leaflet.ajax.min.js"></script>
-  <link rel="stylesheet" href="css/maps/mapstyle.css" />
-  <script src='js/maps/leaflet-sidebar.js'></script>
-  <link href='css/maps/leaflet-sidebar.css' rel='stylesheet' />
-  <script type="text/javascript" src="js/maps/leaflet.fullscreen.js"></script>
-  <link href='css/maps/leaflet.fullscreen.css' rel='stylesheet' />
-  <script type="text/javascript" src="js/ddslick.js"></script>
-    <script type="text/javascript" src="js/config.js"></script>
+    
+    <link rel="stylesheet" href="css/maps/leaflet.css" />
+        <script src="js/maps/leaflet.js"></script>
+    <script src="js/maps/leaflet.ajax.min.js"></script>
+    
+    <link rel="stylesheet" href="css/maps/mapstyle.css" />
+    
+    <script src='js/maps/leaflet-sidebar.js'></script>
+    <link href='css/maps/leaflet-sidebar.css' rel='stylesheet' />
+    
+    <script type="text/javascript" src="js/maps/leaflet.fullscreen.js"></script>
+    <link href='css/maps/leaflet.fullscreen.css' rel='stylesheet' />
+    
+    <script type="text/javascript" src="js/ddslick.js"></script>
+    <script type="text/javascript" src="js/maps/L.SimpleGraticule.js"></script>
+    
+    <link href='css/maps/L.SimpleGraticule.css' rel='stylesheet' />
     <link href='css/pokemon.css' rel='stylesheet' />
+    
+    <script type="text/javascript" src="js/pokemon.js"></script>  
+    <script type="text/javascript" src="js/spiderfier.min.js"></script>  
+    <script type="text/javascript" src="js/maps/leaflet.markercluster.js"></script>  
+    <link href='css/maps/MarkerCluster.Default.css' rel='stylesheet' />
+    
+    <script type="text/javascript" src="js/config.js"></script>
+
 
   <!-- map stuff end -->
 </head>
@@ -42,7 +57,7 @@
     </div>
     <!-- forms / info -->
         <div class="forms-container" style="display: none">
-            <form id='playerSetup' >
+            <form id='playerSetup' autocomplete="off">
                 <h2>Who's playing?</h2>
                 <input id="playerNames" name="playerNames" type="text" placeholder="Enter a name">
                 
@@ -62,10 +77,15 @@
                         <td class="charmander"></td>
                         <td class="squirtle"></td>
                         <td class="pikachu"></td>
+                        <td class="caterpie"></td>
+                        <td class="weedle"></td>
+                        <td class="pidgey"></td>        
+                        <td class="nidoran"></td>     
+                        <td class="nidorina"></td>  
+                        <td class="polywag"></td>                                            
                     </tr>
                 </table>
                           
-            <button class="btn-bottomright" type="reset" id="pokemonSelectionComplete">Next</button>
             </form>
             
             <form id='gameConfig' style="display: none">
@@ -107,7 +127,7 @@
 <div id="map-container">
 
     <div id='map' class='sidebar-map map' style="display: none">	
-    <div id="sidebar" class="sidebar collapsed">
+    <div id="sidebar" class="sidebar collapsed" style="display: none">>
         <!-- Nav tabs -->
         <div class="sidebar-tabs">
             <ul role="tablist">

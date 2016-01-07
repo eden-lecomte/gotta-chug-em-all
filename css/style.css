@@ -232,6 +232,8 @@ h1 {
 #playerIcons > table > tbody > tr > td {
     width: 128px;
     height: 128px;
+    background-size: contain;
+	background-repeat: no-repeat;
 }
 
 .pokemonSelected {
