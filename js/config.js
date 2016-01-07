@@ -55,12 +55,12 @@ $('#playerSetup').on('submit', function(i) {
         numPlayers = playerNames.length;
         playerArray.push(
             player = {
-                name: playerNamesString,   
-                pokemon: '',
-                status: '',
-                coords: [-230, 45],
-                drinks: 0,
-                marker: null,
+                name: playerNamesString,  //  Name entered from title screen
+                pokemon: '',              //  Pokemon selected from title screen
+                status: '',               //  Current status effects (stunned, immune etc)
+                coords: [-230, 45],       //  Location on the gameboard
+                drinks: 0,                //  How many drinks have been allocated to this player (display in console/scoreboard)
+                marker: null,             //  Leaflet marker object
             });
         console.log(playerArray);
         
