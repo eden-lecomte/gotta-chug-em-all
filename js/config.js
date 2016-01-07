@@ -101,6 +101,7 @@ $('#playerIcons > table > tbody > tr > td').on('click', function(){
         $(this).addClass('pokemonSelected');
         pokeCounter += 1;        
         $('#playerIcons').fadeOut();
+
         console.log(pokeCounter + 'vs' + numPlayers)
         if ( pokeCounter < numPlayers ) { 
             $('#playerIcons').promise().done(function(){
@@ -115,6 +116,7 @@ $('#playerIcons > table > tbody > tr > td').on('click', function(){
     } else {
         return false;
     };
+
 
 });
 
