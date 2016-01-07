@@ -6,14 +6,10 @@ var playerNames = new Array();
 var gameSettings = {};
 var pokeMarker = null; 
 var pokemonSelected;
-var markers = L.markerClusterGroup({ 
-                disableClusteringAtZoom: 4,
-                maxClusterRadius: 5,
-                spiderfyDistanceMultiplier: 3
-            });
+//**clusters** var markers = L.markerClusterGroup({ disableClusteringAtZoom: 4, maxClusterRadius: 5, spiderfyDistanceMultiplier: 3 });
 
 $( document ).ready(function() {
-// game init    
+// game init     
 
 var gameboardOriginalUrl = 'img/board-original.png',
     gameboardGoldSilverUrl = 'img/board-gold-silver.png'
@@ -96,8 +92,9 @@ $('#playerIcons > table > tbody > tr > td').on('click', function(){
         playerArray[pokeCounter].pokemon = ''+ pokemonSelected +'';
         playerArray[pokeCounter].marker = L.marker([playerArray[pokeCounter].coords[0], playerArray[pokeCounter].coords[1]], {
                                                     icon: window[pokemonSelected]
-                                                });
-        markers.addLayer(playerArray[pokeCounter].marker);
+                                                }).addTo(map);
+        //**clusters** markers.addLayer(playerArray[pokeCounter].marker);
+        oms.addMarker(playerArray[pokeCounter].marker)  //**spiderfier
         $(this).addClass('pokemonSelected');
         pokeCounter += 1;        
         $('#playerIcons').fadeOut();
@@ -162,11 +159,11 @@ map.setMaxBounds(bounds);
 var sidebar = L.control.sidebar('sidebar', {position: 'left'}).addTo(map); //sidebar panel
 var fullscreenControl = new L.control.fullscreen().addTo(map); // fullscreen control    
 
-//var options = {
-//    keepSpiderfied: true,
-//    nearbyDistance: 120
-//}
-//oms = new OverlappingMarkerSpiderfier(map, options);
+var options = {  //**spiderfier
+    keepSpiderfied: true,
+    nearbyDistance: 120
+};
+oms = new OverlappingMarkerSpiderfier(map, options); //**spiderfier
 
 
 
@@ -348,11 +345,10 @@ var specialEffectsTemplate = {
 function gameStart(){
     setTimeout(function () {
         map.invalidateSize();
-        map.addLayer(markers);
-        console.log(markers + 'added to map');
-        
-        var bounds = markers.getBounds(); // [1]
-        map.fitBounds(bounds); // [2]  
+        //**clusters** map.addLayer(markers);
+     
+        //**clusters** var bounds = markers.getBounds(); // [1]
+        //**clusters** map.fitBounds(bounds); // [2]  
     }, 500);
 }
 
