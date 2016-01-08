@@ -1,4 +1,6 @@
 var specialEffectsTemplate = {
+    stringshot: {},     // All players 1/2 roll until next turn
+    pikachu: {},        // Replace token with Pikachu?? Unsure about this...
     zubats: {},         // Confuse user, they must roll 3+ to leave
     clefairy: {},       // Pick a random square, check drink value. If none, drink 2
     abra: {},           // Swap places with the other Abra

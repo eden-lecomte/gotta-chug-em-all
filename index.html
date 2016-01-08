@@ -40,8 +40,18 @@
     <script type="text/javascript" src="js/maps/leaflet.markercluster-src.js"></script>  
     <link href='css/maps/MarkerCluster.Default.css' rel='stylesheet' />
     
+    <script type="text/javascript" src="js/maps/MovingMarker.js"></script>
+    
+    <script type="text/javascript" src="js/modal.js"></script>
+    
+    <script>
+        var diceRoll = 0;
+    </script>
+
+    <script type="text/javascript" src="js/watch.js"></script>
     <script type="text/javascript" src="js/squares-original.js"></script>
     <script type="text/javascript" src="js/specialeffects.js"></script>
+    
     <script type="text/javascript" src="js/config.js"></script>
 
   <!-- map stuff end -->
@@ -54,14 +64,13 @@
     <div class="pokemonTitle"></div>
     <div class="board-container">
         <div class="pokemonTitle-inner" id="selectBoard-original"><h2>Original</h2><img src="img/board-original.png" ></div>
-        <div class="pokemonTitle-inner" id="selectBoard-goldsilver"><h2>Gold Silver</h2><img src="img/board-gold-silver.png" ></div>
+        <!-- <div class="pokemonTitle-inner" id="selectBoard-goldsilver"><h2>Gold Silver</h2><img src="img/board-gold-silver.png" ></div> -->
     </div>
     <!-- forms / info -->
         <div class="forms-container" style="display: none">
             <form id='playerSetup' autocomplete="off">
                 <h2>Who's playing?</h2>
                 <input id="playerNames" name="playerNames" type="text" placeholder="Enter a name">
-                
                 <div id="playerList">
                     <table class="nameList">
                         
@@ -126,36 +135,21 @@
 <!-- game intro end -->
 
 <div id="map-container">
-
-    <div id='map' class='sidebar-map map' style="display: none">	
-    <div id="sidebar" class="sidebar collapsed" style="display: none">>
-        <!-- Nav tabs -->
-        <div class="sidebar-tabs">
-            <ul role="tablist">
-                <li id="infoTab"><a href="#info" role="tab" title="Game setup"><i class="fa fa-info-circle"></i></a></li>
-            </ul>
-            <ul role="tablist">
-                <li id="settingsTab"><a href="#settings" role="tab" title="Settings"><i class="fa fa-gear"></i></a></li>
-            </ul>
-        </div>
-
-        <!-- Tab panes -->
-        <div class="sidebar-content">
-            <div class="sidebar-pane" id="info">
-                <div class="sidebar-header">Game setup<div class="sidebar-close"><i class="fa fa-angle-left"></i></div>
-                </div>
-
-            </div>
-            <div class="sidebar-pane" id="settings">
-                <div class="sidebar-header">Settings<div class="sidebar-close"><i class="fa fa-angle-left"></i></div></div>
-                <div class="legend-container"></div>
-            </div>
-
-        </div>
-    </div>
-    </div>
+    <div id='map' class='map' style="display: none"></div>
 </div>    
-        
+<div id="game-controls" style="display: none">
+    <h2 class='diceRoller' name='diceWindow'>Roll dice!</h2>  
+    <div class="die">0</div>
+    <h2>Drink totals</h2>
+    <div class="drinksTally">
+        <table class="drinksTable"></table>
+    </div>
+</div>       
+
+  
+<div id='mask'></div>  
+  
+<div id='diceWindow' class='modal_window'></div>    
     
 </body>
 </html>

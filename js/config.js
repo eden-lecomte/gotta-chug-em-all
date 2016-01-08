@@ -6,6 +6,9 @@ var playerNames = new Array();
 var gameSettings = {};
 var pokeMarker = null; 
 var pokemonSelected;
+var markerRail = [[-232, 44], [-207, 44]]
+var turnCounter = 0;
+var movesRemaining = 0;
 //**clusters** var markers = L.markerClusterGroup({ disableClusteringAtZoom: 4, maxClusterRadius: 5, spiderfyDistanceMultiplier: 3 });
 
 $( document ).ready(function() {
@@ -34,12 +37,6 @@ $('#selectBoard-goldsilver').on('click', function() {
 });
 
 //configuration
-numPlayers = 0
-playerArray = [];
-
-playerNames = new Array();
-
-gameSettings = {};
 
 $('#playerSetup').on('submit', function(i) {
     var playerNamesInput = $(this).find("input[name^='playerNames']");
@@ -55,12 +52,15 @@ $('#playerSetup').on('submit', function(i) {
                 pokemon: '',              //  Pokemon selected from title screen
                 status: '',               //  Current status effects (stunned, immune etc)
                 coords: [-230, 45],       //  Location on the gameboard
+                square: 0,                //  Which square are you on
                 drinks: 0,                //  How many drinks have been allocated to this player (display in console/scoreboard)
                 marker: null,             //  Leaflet marker object
             });
         console.log(playerArray);
-        
-        $('.nameList').append("<tr><td width='40%'><span>"+ playerNamesString +"</span></td>");
+        watch(player, 'drinks', function(){
+            $('#drinks-' + playerArray[turnCounter].pokemon).text(playerArray[turnCounter].drinks)
+        });
+        $('.nameList').append("<tr><td width='40%'><span>"+ playerNamesString +"</span></td></tr>");
         
         playerNamesInput.val('');
         playerNamesInput.attr('placeholder', 'Type another one!')
@@ -79,7 +79,7 @@ var pokeCounter = 0;
 
 $('#namesEntered').on('click', function() {
     $('#playerSetup').slideUp('slow');
-    $('#playerNamePickPokemon').html(''+ playerArray[0].name + ', pick your favourite Pokemon!')
+    $('#playerNamePickPokemon').html(''+ playerArray[0].name + ', pick your favourite Pokemon!');
     $('#playerIcons').slideDown('slow')
     return false;
 });
@@ -90,12 +90,16 @@ $('#playerIcons > table > tbody > tr > td').on('click', function(){
     if ( !$(this).hasClass('pokemonSelected') ){
 
         playerArray[pokeCounter].pokemon = ''+ pokemonSelected +'';
-        playerArray[pokeCounter].marker = L.marker([playerArray[pokeCounter].coords[0], playerArray[pokeCounter].coords[1]], {
+        playerArray[pokeCounter].marker = L.Marker.movingMarker(markerRail, [2000], {
                                                     icon: window[pokemonSelected]
                                                 });
         //**clusters** markers.addLayer(playerArray[pokeCounter].marker);
         oms.addMarker(playerArray[pokeCounter].marker)  //**spiderfier
         playerArray[pokeCounter].marker.addTo(map);
+        
+        $('.drinksTable').append("<tr><td width='40%'><span>"+ playerArray[pokeCounter].name +"</span></td><td><span id='drinks-"+ playerArray[pokeCounter].pokemon +"'>0</span></td></tr>");
+        
+        
         $(this).addClass('pokemonSelected');
         pokeCounter += 1;        
         $('#playerIcons').fadeOut();
@@ -118,15 +122,17 @@ $('#playerIcons > table > tbody > tr > td').on('click', function(){
 
 });
 
-
+//close final dialog
 $('#gameStart').on('click', function() {
     $('.intro-container').slideUp('slow');
-    $('#map').slideDown('slow')
+    $('#map').slideDown('slow');
+    $('#game-controls').slideDown('slow');
     map.invalidateSize();
     $('#ytplayer').remove()
     gameStart();
     return false;
 });
+
 
 
 //map init
@@ -157,8 +163,8 @@ var bounds = new L.LatLngBounds(southWest, northEast);
 // tell leaflet that the map is exactly as big as the image
 map.setMaxBounds(bounds);
         
-var sidebar = L.control.sidebar('sidebar', {position: 'left'}).addTo(map); //sidebar panel
-var fullscreenControl = new L.control.fullscreen().addTo(map); // fullscreen control    
+//var fullscreenControl = new L.control.fullscreen().addTo(map); // fullscreen control    
+L.polyline(markerRail).addTo(map);
 
 var options = {  //**spiderfier
     keepSpiderfied: true,
@@ -167,7 +173,7 @@ var options = {  //**spiderfier
 oms = new OverlappingMarkerSpiderfier(map, options); //**spiderfier
 
 
-
+// Grid for marker placement
 var gridOptions = {interval: 20,
                showOriginLabel: true,
                redraw: 'move',
@@ -179,35 +185,7 @@ var gridOptions = {interval: 20,
 
 L.simpleGraticule(gridOptions).addTo(map);
 
-    
-// resize left side map controls for sidebar
-$(window).resize(function() {
-	if( $('#sidebar').width() > 100 ){
-		var windowsize = $(window).width();
-		var leftpadding = '0';
-		
-		if (windowsize > 768 && windowsize < 992) {
-			leftpadding = '315px';
-		}else if (windowsize > 991 && windowsize < 1200) {
-			leftpadding = '400px';
-		}else if (windowsize > 1201){
-			leftpadding = '470px';
-		}
-	$('.leaflet-left').css({'left': leftpadding})		
-	};
-});
-
-//disable map controls when clicking/scrolling on sidebar
-var div = L.DomUtil.get('sidebar');
-if (!L.Browser.touch) {
-    L.DomEvent.disableClickPropagation(div);
-    L.DomEvent.on(div, 'mousewheel', L.DomEvent.stopPropagation);
-} else {
-    L.DomEvent.on(div, 'click', L.DomEvent.stopPropagation);
-    L.DomEvent.on(div, 'touchstart', L.DomEvent.stopPropagation);	
-}
-
-
+// Resize markers on zoom 
 map.on('zoomend', function() {
   var currentZoom = map.getZoom();
 
@@ -217,47 +195,55 @@ map.on('zoomend', function() {
       'width': zoomStyles[currentZoom],
       'height': zoomStyles[currentZoom]
   });
-
 });
 
 
-// NEED LAYERS I THINK????
+
+//Roll the dice
+$('.diceRoller').on('click', function(){  
+
+        rollDice();
+        //use the function to show it
+        show_modal('diceWindow');  
+         
+        setTimeout(function () {
+            $("<div class='diceAnimation'></div>").appendTo('#diceWindow');
+            $(".diceAnimation").css('background-image', 'url(img/throw.gif)');
+            setTimeout(function () {
+                $(".diceAnimation").css('background-image', 'url(img/result.gif)');
+            }, 2400);
+            setTimeout(function () {
+                $(".diceAnimation").css('background-image', 'url(img/diceresult.png)');
+            }, 3600);
+            setTimeout(function () {
+                $("<div class='diceResults'></div>").appendTo('.diceAnimation');
+                $('.diceResults').html('<span>' + diceRoll + '</span>');
+                $('.die').html( '<span>' + diceRoll + '</span>' );
+                $('.diceResults').fadeIn(1500);
+            }, 3700);
+            setTimeout(function () {
+                movesRemaining = diceRoll;
+                map.setView(playerArray[turnCounter].coords, 4, {animate: true});
+                moveMarker();
+            }, 6000);
+
+            setTimeout(function () {
+                 
+                close_modal();
+                $(".diceAnimation").remove();
+                $('.diceResults').remove();
+                $(".diceAnimation").css('background-img', 'none');
+            }, 7000);
+        }, 300);         
+});  
 
 
 
-// TODO:
-    // 1. Number all squares and assign coordinates to each square
-    // 2. Add spidifier to markers on same square
-    // 3. Trainer battles
-    
-    //For each player create L.marker.divIcon
-    
-    //Turns: loop numPlayers until pokemon master, checking for status effects
-    
-    //Status effects:
-    //  Miss a turn
-    //  Confused
-    //  Silver gym
-    //  Drink finished??
-    
-    //Special squares
-    //  Miss a turn
-    //  Clefairy
-    //  Take another turn (jigglypuff + rare candy)
-    //  Gold gyms
-    //  Silver gyms (Safari Zone... ugh)
-    //  Missingno
-    //  Haunter (move back 10)
-    //  Magikarp SPASH + Gyrados
-    //  Porygon drink reflections
-    //  Pikachu
-    //  Pokemon evolving (skip next gym)
-    //  Jigglypuff
         
 
 });
 
-
+//function runs at the beginning of the game
 function gameStart(){
     setTimeout(function () {
         map.invalidateSize();
@@ -266,7 +252,41 @@ function gameStart(){
         //**clusters** var bounds = markers.getBounds(); // [1]
         //**clusters** map.fitBounds(bounds); // [2]  
     }, 500);
-}
+};
+
+
+function moveMarker() {
+    //zoom to marker
+    setTimeout(function () {            
+        //move marker
+        var marker = playerArray[turnCounter].marker;
+        var loc = playerArray[turnCounter].square;
+        var moveToSquare = loc + 1;
+        
+        marker.moveTo(gameSquares[moveToSquare].latlng, 800)
+
+        playerArray[turnCounter].square = moveToSquare;
+        playerArray[turnCounter].coords = gameSquares[moveToSquare].latlng;
+
+        map.panTo(playerArray[turnCounter].coords, {animate: true, duration: 1.0});
+        
+        if (gameSquares[moveToSquare].gymGold == true) {
+            movesRemaining = 0;
+            //do gym things
+            resolveTurn();
+        } else {
+            movesRemaining -= 1;
+            console.log('moves remaining ' + movesRemaining)
+            if (movesRemaining > 0) {
+                moveMarker();
+            }
+            else {
+                resolveTurn();
+            }
+        }
+    }, 2000);    
+    
+};
 
 //function TEST(){
 //    setTimeout(function () {
@@ -284,3 +304,75 @@ function gameStart(){
 //        map.fitBounds(bounds); // [2]  
 //    }, 500);
 //}
+
+
+// dice roll
+function rollDice() {
+    diceRoll = Math.floor(Math.random() * 6) + 1
+};
+
+//Check squares and finish turn
+function resolveTurn() {
+    var playerSquare = playerArray[turnCounter].square;
+    var square = gameSquares[playerSquare];
+    
+    setTimeout(function () {                
+        square.fn
+            setTimeout(function () {                
+                if (square.drink > 0) {
+                    playerArray[turnCounter].drinks += square.drink
+                    alert('' + playerArray[turnCounter].name + ', drink ' + square.drink);
+                    }
+                setTimeout(function () {   
+                    endTurn();
+                }, 1000);             
+            }, 1500);
+    }, 500);     
+       
+};
+
+//finilise turn, and progress to next player
+function endTurn() {
+    turnCounter += 1;
+    if (turnCounter >= numPlayers) {
+        turnCounter = 0;
+    } 
+    setTimeout(function () {                
+        //map.setView(playerArray[turnCounter].coords, map.getZoom(), {animate: true, duration: 5});
+    }, 5000);        
+}
+
+function reRoll() {
+        rollDice();
+        //use the function to show it
+        show_modal('diceWindow');  
+         
+        setTimeout(function () {
+            $("<div class='diceAnimation'></div>").appendTo('#diceWindow');
+            $(".diceAnimation").css('background-image', 'url(img/throw.gif)');
+            setTimeout(function () {
+                $(".diceAnimation").css('background-image', 'url(img/result.gif)');
+            }, 2400);
+            setTimeout(function () {
+                $(".diceAnimation").css('background-image', 'url(img/diceresult.png)');
+            }, 3600);
+            setTimeout(function () {
+                $("<div class='diceResults'></div>").appendTo('.diceAnimation');
+                $('.diceResults').html('<span>' + diceRoll + '</span>');
+                $('.die').html( '<span>' + diceRoll + '</span>' );
+                $('.diceResults').fadeIn(1500);
+            }, 3700);
+            setTimeout(function () {
+
+
+            }, 6000);
+
+            setTimeout(function () {
+                 
+                close_modal();
+                $(".diceAnimation").remove();
+                $('.diceResults').remove();
+                $(".diceAnimation").css('background-img', 'none');
+            }, 7000);
+        }, 300);      
+}

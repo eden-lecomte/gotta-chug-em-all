@@ -1,5 +1,6 @@
 body {
     font-family: Verdana, Geneva, Tahoma, sans-serif;
+    background-color: #676767;
 }
 
 .game-board-container {
@@ -31,7 +32,7 @@ body {
     -moz-box-shadow: 0px 0px 10px 4px rgba(105, 105, 105, 0.75);
     -webkit-box-shadow: 0px 0px 10px 4px rgba(105, 105, 105, 0.75);
     border-radius: 5px;
-    z-index: 9999;
+        z-index: 7000;
     background-color: #FFF;
     padding: 25px;
     opacity: 0.9;
@@ -148,7 +149,7 @@ h1 {
         margin-top: 0;
         border: none;
         border-radius: 5px;
-        z-index: 9999;
+        z-index: 7000;
         background-color: #FFF;
         padding: 25px 0;
         opacity: 1;
@@ -189,7 +190,7 @@ h1 {
         -moz-box-shadow: 0px 0px 10px 4px rgba(105, 105, 105, 0.75);
         -webkit-box-shadow: 0px 0px 10px 4px rgba(105, 105, 105, 0.75);
         border-radius: 5px;
-        z-index: 9999;
+        z-index: 7000;
         background-color: #FFF;
         padding: 25px;
         overflow: hidden;
@@ -238,4 +239,84 @@ h1 {
 
 .pokemonSelected {
     opacity: 0.4;
+}
+
+.die {
+  height: 100px;
+  width: 100px;
+  margin: 10px auto;
+  background: white;
+  border: 2px solid black;
+  border-radius: 10px;
+  font-family: pokemonSolid;
+  font-size: 4em;
+  line-height: 100px;
+  text-align: center;
+}
+
+#map {
+    width: 84%;
+    display: inline-block;
+    border-right: 4px solid #000; 
+}
+
+#game-controls {
+    width: 15%;
+    display: inline-block;
+    float: right;
+}
+
+#mask{  
+    position:absolute; /* important */  
+    top:0px; /* start from top */  
+    left:0px; /* start from left */  
+    height:100%; /* cover the whole page */  
+    width:100%;  /* cover the whole page */  
+    display:none; /* don't show it '*/  
+  
+    /* styling bellw */  
+    background-color: black;  
+    z-index: 9899;
+}  
+  
+.modal_window{  
+    position:absolute; /* important so we can position it on center later */  
+    display:none; /* don't show it */  
+  
+    /* styling below */  
+    color:white;  
+    padding:0px;  
+        border: none;
+        box-shadow: 0px 0px 10px 4px rgba(105, 105, 105, 0.75);
+        -moz-box-shadow: 0px 0px 10px 4px rgba(105, 105, 105, 0.75);
+        -webkit-box-shadow: 0px 0px 10px 4px rgba(105, 105, 105, 0.75);
+    color:black;  
+    z-index: 9900;
+}  
+
+#diceWindow {
+    margin: -160px 0 0 -216px;
+}
+
+
+.diceAnimation {
+    width: 432px;
+    height: 320px;
+    display: block;
+    z-index: 9901;
+    background-image: none;
+    background-size: contain;
+}
+
+
+.diceResults {
+    text-align: center;
+    display: none;
+    z-index: 9902;
+    height: 50px;
+    color: #000;
+    font-family: pokemonSolid;
+    font-size: 80pt;
+    padding-top: 10px;
+ 
 }
