@@ -54,7 +54,7 @@ var gameSquares = [
         give: [1,2],//drinks,people
     },     
     square6= {//Pewter Gym
-    	latlng: [-90, 44],
+    	latlng: [-90, 44],   
     	gymGold: true,
         text: 'PEWTER GYM will Brock your world',
         action: 'Roll a die. Even: Give a drink. Odd Take a drink',
