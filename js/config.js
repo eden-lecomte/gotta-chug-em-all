@@ -204,6 +204,8 @@ $('.diceRoller').on('click', function(){
 
         rollDice();
         map.setView(playerArray[turnCounter].coords, 4, {animate: true});
+        
+       
         //use the function to show it
         show_modal('diceWindow');  
          
@@ -234,7 +236,7 @@ $('.diceRoller').on('click', function(){
                 $('.diceResults').remove();
                 $(".diceAnimation").css('background-img', 'none');
             }, 7000);
-        }, 300);         
+        }, 1000);         
 });  
 
 
@@ -316,30 +318,41 @@ function resolveTurn() {
     var playerSquare = playerArray[turnCounter].square;
     var square = gameSquares[playerSquare];
     
-    setTimeout(function () {                
-        square.fn
-            setTimeout(function () {                
-                if (square.drink > 0) {
-                    playerArray[turnCounter].drinks += square.drink
-                    alert('' + playerArray[turnCounter].name + ', drink ' + square.drink);
-                    }
-                setTimeout(function () {   
-                    endTurn();
-                }, 1000);             
-            }, 1500);
+    setTimeout(function () {    
+        if (square.fn) {            
+            square.fn();
+        };
+        setTimeout(function () {                
+            if (square.drink > 0) {
+                playerArray[turnCounter].drinks += square.drink
+                alert('' + playerArray[turnCounter].name + ', drink ' + square.drink);
+                }
+            setTimeout(function () {   
+                endTurn();
+            }, 1000);             
+        }, 1500);
     }, 500);     
        
 };
 
 //finilise turn, and progress to next player
 function endTurn() {
+    $('.' + playerArray[turnCounter].pokemon).css('background-image', '');
+    $('.' + playerArray[turnCounter].pokemon).css('background-size', '');
+    $('.' + playerArray[turnCounter].pokemon).css('background-position', '');
+    
     turnCounter += 1;
     if (turnCounter >= numPlayers) {
         turnCounter = 0;
     } 
     setTimeout(function () {                
-        //map.setView(playerArray[turnCounter].coords, map.getZoom(), {animate: true, duration: 5});
-    }, 5000);        
+        var currentBkgd = $('.' + playerArray[turnCounter].pokemon).css('background-image');
+        var animatedPath = currentBkgd.replace("''", "").replace("/sprites/", "/sprites/animated/").replace(".png", ".gif");
+        
+        $('.' + playerArray[turnCounter].pokemon).css('background-image', animatedPath);
+        $('.' + playerArray[turnCounter].pokemon).css('background-size', '150%');
+        $('.' + playerArray[turnCounter].pokemon).css('background-position', 'center');
+    }, 500);        
 }
 
 function reRoll() {
