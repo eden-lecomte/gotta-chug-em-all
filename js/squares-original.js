@@ -50,7 +50,7 @@ var gameSquares = [
     square5= {//beedrill
     	latlng: [-115, 44],
         text: 'Beedrill used Twinneedle!',
-        action: 'Pick two people to drink',
+        action: 'Pick two people to drink',  
         give: [1,2],//drinks,people
     },     
     square6= {//Pewter Gym
