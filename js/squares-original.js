@@ -229,8 +229,16 @@ var gameSquares = [
     	latlng: [-210, 67],
         gymGold: true,
         text: "CELADON GYM - something something Erika",
-        action: "Roll a die. 1-3: Stun Spore; Lose a turn. 4-6 Mega Drain; Finish your drink.",
-        //
+         action: "Roll a die. 1-3: Stun Spore; Lose a turn. 4-6: Mega Drain; Finish your drink",
+        reRoll(){
+            if(diceRoll ==1||diceRoll == 2 || diceRoll == 3)
+            {
+                missTurn: true;
+            }
+            else{
+                drink: finish;
+            }
+        }
     }, 
     square33= {//psyduck
     	latlng: [-185, 67],
@@ -247,7 +255,7 @@ var gameSquares = [
         specialEffect: 'evolution',
     }, 
     square35= {//Porygon
-    	latlng: [-232, 67],
+    	latlng: [-136, 67],
         
         text: "Porygon used Tri Attack!",
         action: "While on this space, for each drink you are given the giver must drink 3",
@@ -255,15 +263,140 @@ var gameSquares = [
         //
     }, 
     
-    square36= {//evee
-    	latlng: [-232, 67],
+    square36= {//SILPH CO.
+    	latlng: [-115, 67],
+        gymSilver: true, //Silphco
+        text: "You've infiltrated the headquarters of the infamous Team Rocket! You will need all your courage to make it to their leader.",
+        action: "Drink an extra 2 every turn to calm your nerves",
         
-        text: "Eeveelution time!",
-        action: "You choose a new rule! any rule violations result in a drink.",
-        rule: true,
         //
     }, 
-    
+    square37= {//scientist
+    	latlng: [-92, 67],
+        gymSilver: true, //Silphco
+        text: "A Scientist uses his magnet Pokemon!",
+        action: "You magnetically attract 1 drink per player in the game",
+        drink: playerTotal,
+        //
+    }, 
+    square38= {//Lapras
+    	latlng: [-68, 67],
+        gymSilver: true, //Silphco
+        text: "Lapras used Confuse Ray!",
+        action: "Pick a player; they are now confused. Next turn, they must roll a 1-3 to stop being confused. If not, they are still confused and lose a turn.",
+        specialEffect: 'confuseRay',
+        //
+    }, 
+    square39= {//Team rocket
+    	latlng: [-68, 91],
+        gymSilver: true, //Silphco
+        text: "It's Team Rocket! Watch them defeat themselves with incompetence.",
+        action: "Everyone drink to them blasting off",
+        give: [1,99],
+        //
+    }, 
+    square40= {//Giovanni
+    	latlng: [-68, 114],
+        gymSilver: true, //Silphco
+        text: "GIOVANNI",
+        action: "Roll a die. 1-3 Give that number. 4-6 Drink that number",
+        reRoll(){
+            if(diceRoll >=3){
+                give: diceRoll;        
+            }
+            else{
+                drink:diceRoll;
+            }
+        }
+        //
+    }, 
+    square41= {//rare candy
+    	latlng: [-68, 138],
+        
+        text: "Rare Candy - Level up!",
+        action: "You get and extra turn.",
+        extraTurn: true,
+        //
+    }, 
+    square42= {//gary
+    	latlng: [-68, 162],
+        
+        text: "Gaaaaaary. The next time this punk hassles you will be the last.",
+        action: "Roll a die and take that many drinks.",
+        reRoll(){
+            drink: diceRoll;
+        }
+        //
+    }, 
+    square43= {//SAFFRON GYM
+    	latlng: [-68, 185],
+        gymGold: true,
+        text: "SAFFRON GYM - lol gl.",
+        action: "Use psychich powers to pick a number, then roll the die. If it's your number, take and extra turn. If not, drink 2",
+        specialEffect: 'saffronGym',
+        //
+    }, 
+    square44= {//chugging contest
+    	latlng: [-68, 209],
+        
+        text: "The ultimate chug down of ultimate destiny",
+        action: "Challenge someone to a chugging contest. First to finish gets an extra turn, last to finish loses a turn.",
+        extraTurn: true,
+        //
+    }, 
+    square45= {//Krabby
+    	latlng: [-91, 209],
+        
+        text: "Krabby(boss af.) used Crabhammer!",
+        action: "Bring down the Crabhammer on someone; They must finish their drink",
+        give: [1,100],//finish
+        //
+    }, 
+    square46= {//Ditto
+    	latlng: [-115, 209],
+        
+        text: "Ditto used Transform!",
+        action: "During the next person's turn, you must copy everything they do!",
+        
+        //
+    }, 
+    square47= {//Doduo
+    	latlng: [-137, 209],
+        
+        text: "Doduo used Double-Edge",
+        action: "You give 4 drinks, but you drink 1",
+        give: 4,
+        drink: 1,
+        //
+    }, 
+    square48= {//Safari zone
+    	latlng: [-162, 209],
+        gymSilver: true,//sadness zone
+        text: "SAFARI ZONE - Valley of tears",
+        action: "Before each turn in the Safari Zone, roll a die. 1-2: You throw bait. Give 1 drink to someone. 3-4: You throw a rock, dick. Lose your turn, drink 4. 5-6: You throw a safari ball. Drink 2 in sadness, because safari balls are just awful.",
+        
+        //
+    }, 
+    square49= {//Dratini
+    	latlng: [-185, 209],
+          gymSilver: true,//sadness zone
+        text: "Gone fishin'... a wild Dratini appeared!",
+        action: "Roll a 1 to catch. Otherwise, drink 1",
+        reRoll(){
+            if(diceRoll != 1 )
+            drink: 1;
+           
+        }
+        //
+    }, 
+    square50= {//Taurus
+    	latlng: [-209, 209],
+          gymSilver: true,//sadness zone
+        text: "A wild Taurus appeared... but instantly fled.",
+        action: "Drink 2 for not being quick enough",
+        drink: 2,
+        //
+    }, 
                              
 ];
 
