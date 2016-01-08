@@ -203,6 +203,7 @@ map.on('zoomend', function() {
 $('.diceRoller').on('click', function(){  
 
         rollDice();
+        map.setView(playerArray[turnCounter].coords, 4, {animate: true});
         //use the function to show it
         show_modal('diceWindow');  
          
@@ -223,7 +224,6 @@ $('.diceRoller').on('click', function(){
             }, 3700);
             setTimeout(function () {
                 movesRemaining = diceRoll;
-                map.setView(playerArray[turnCounter].coords, 4, {animate: true});
                 moveMarker();
             }, 6000);
 
@@ -284,7 +284,7 @@ function moveMarker() {
                 resolveTurn();
             }
         }
-    }, 2000);    
+    }, 1200);    
     
 };
 
