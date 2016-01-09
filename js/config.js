@@ -1,3 +1,10 @@
+// pass vars to each function as they are called
+// var pokemon = playerArray[turnCounter].pokemon
+// var name = playerArray[turnCounter].name
+// gameStart(pokemon, name)
+// will pass the pokemon of the current turn, and the name between functions
+
+
 var map;
 var oms;
 var numPlayers = 0;
