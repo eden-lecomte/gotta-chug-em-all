@@ -209,6 +209,10 @@ var gameSquares = [
         
         text: "A sleeping Snorelax blocks your path",
         action: "Belt out a song of the group's choice to wake him, or take 4 D's",
+        fn: function (){
+            show_modal('pokerap');
+            $('#pokerap').html('<iframe width="560" height="315" src="https://www.youtube.com/embed/-dedmEDT_60?autoplay=1&modestbranding=1&controls=0&loop=1&showinfo=0&rel=0&playlist=-dedmEDT_60" frameborder="0" allowfullscreen></iframe><br /><br /><button onclick="clearModal(pokerap)" style="float: right">Finished</button>');
+        },
         //drink:4,
     }, 
     square30= {//gaaary

@@ -18,6 +18,16 @@ var turnCounter = 0;
 var movesRemaining = 0;
 //**clusters** var markers = L.markerClusterGroup({ disableClusteringAtZoom: 4, maxClusterRadius: 5, spiderfyDistanceMultiplier: 3 });
 
+
+//shortcodes for current player properties
+var _player = playerArray[turnCounter]
+var _square = playerArray[turnCounter].square
+var _pokemon = playerArray[turnCounter].pokemon
+var _name = playerArray[turnCounter].name
+var _coords = playerArray[turnCounter].coords
+var _marker = playerArray[turnCounter].marker
+var _drinks = playerArray[turnCounter].drinks
+
 $( document ).ready(function() {
 // game init     
 
@@ -63,7 +73,6 @@ $('#playerSetup').on('submit', function(i) {
                 drinks: 0,                //  How many drinks have been allocated to this player (display in console/scoreboard)
                 marker: null,             //  Leaflet marker object
             });
-        console.log(playerArray);
         watch(player, 'drinks', function(){
             $('#drinks-' + playerArray[turnCounter].pokemon).text(playerArray[turnCounter].drinks)
         });
@@ -71,8 +80,6 @@ $('#playerSetup').on('submit', function(i) {
         
         playerNamesInput.val('');
         playerNamesInput.attr('placeholder', 'Type another one!')
-
-        console.log('Number of players ' + numPlayers)
 
         return false;
     }
@@ -111,7 +118,6 @@ $('#playerIcons > table > tbody > tr > td').on('click', function(){
         pokeCounter += 1;        
         $('#playerIcons').fadeOut();
 
-        console.log(pokeCounter + 'vs' + numPlayers)
         if ( pokeCounter < numPlayers ) { 
             $('#playerIcons').promise().done(function(){
                 $('#playerNamePickPokemon').html(''+ playerArray[pokeCounter].name + ', pick your favourite Pokemon!')
@@ -268,24 +274,23 @@ function moveMarker() {
     //zoom to marker
     setTimeout(function () {            
         //move marker
-        var marker = playerArray[turnCounter].marker;
-        var loc = playerArray[turnCounter].square;
-        var moveToSquare = loc + 1;
-        
-        marker.moveTo(gameSquares[moveToSquare].latlng, 800)
 
-        playerArray[turnCounter].square = moveToSquare;
-        playerArray[turnCounter].coords = gameSquares[moveToSquare].latlng;
-
-        map.panTo(playerArray[turnCounter].coords, {animate: true, duration: 1.0});
         
-        if (gameSquares[moveToSquare].gymGold == true) {
+        var nextSquare = _square + 1;
+        
+        _marker.moveTo(gameSquares[nextSquare].latlng, 800)
+
+        _square = nextSquare;
+        _coords = gameSquares[nextSquare].latlng;
+
+        map.panTo(_coords, {animate: true, duration: 1.0});
+        
+        if (gameSquares[nextSquare].gymGold == true) {
             movesRemaining = 0;
             //do gym things
             resolveTurn();
         } else {
             movesRemaining -= 1;
-            console.log('moves remaining ' + movesRemaining)
             if (movesRemaining > 0) {
                 moveMarker();
             }
@@ -322,8 +327,8 @@ function rollDice() {
 
 //Check squares and finish turn
 function resolveTurn() {
-    var playerSquare = playerArray[turnCounter].square;
-    var square = gameSquares[playerSquare];
+
+    var square = gameSquares[_square];
     
     setTimeout(function () {    
         if (square.fn) {            
@@ -331,8 +336,8 @@ function resolveTurn() {
         };
         setTimeout(function () {                
             if (square.drink > 0) {
-                playerArray[turnCounter].drinks += square.drink
-                alert('' + playerArray[turnCounter].name + ', drink ' + square.drink);
+                _drinks += square.drink
+                alert('' + _name + ', drink ' + square.drink);
                 }
             setTimeout(function () {   
                 endTurn();
@@ -344,21 +349,21 @@ function resolveTurn() {
 
 //finilise turn, and progress to next player
 function endTurn() {
-    $('.' + playerArray[turnCounter].pokemon).css('background-image', '');
-    $('.' + playerArray[turnCounter].pokemon).css('background-size', '');
-    $('.' + playerArray[turnCounter].pokemon).css('background-position', '');
+    $('.' + _pokemon).css('background-image', '');
+    $('.' + _pokemon).css('background-size', '');
+    $('.' + _pokemon).css('background-position', '');
     
     turnCounter += 1;
     if (turnCounter >= numPlayers) {
         turnCounter = 0;
     } 
     setTimeout(function () {                
-        var currentBkgd = $('.' + playerArray[turnCounter].pokemon).css('background-image');
+        var currentBkgd = $('.' + _pokemon).css('background-image');
         var animatedPath = currentBkgd.replace("''", "").replace("/sprites/", "/sprites/animated/").replace(".png", ".gif");
         
-        $('.' + playerArray[turnCounter].pokemon).css('background-image', animatedPath);
-        $('.' + playerArray[turnCounter].pokemon).css('background-size', '150%');
-        $('.' + playerArray[turnCounter].pokemon).css('background-position', 'center');
+        $('.' + _pokemon).css('background-image', animatedPath);
+        $('.' + _pokemon).css('background-size', '150%');
+        $('.' + _pokemon).css('background-position', 'center');
     }, 500);        
 }
 
@@ -395,4 +400,9 @@ function reRoll() {
                 $(".diceAnimation").css('background-img', 'none');
             }, 7000);
         }, 300);      
-}
+};
+
+function clearModal(modal_id){
+    $(modal_id).html('');
+    close_modal();
+};
