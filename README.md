@@ -6,7 +6,12 @@ Config between boards should be pretty minimal, only changing square attributes 
 
 <h2>Implemented</h2>
 <ul>
+  <li>Pokemon intro song</li>
   <li>For each player create L.marker.divIcon against player object</li>
+  <li>Dice roll animation and function added</li>
+  <li>Turns based off internal counter, current player identified by turn counter</li>
+  <li>Animated markers for current turn</li>
+  <li>Markers move +1 square until no moves remaining, or gold gym</li>
 </ul>
 
 Player objects are built as 
@@ -25,7 +30,7 @@ Player objects are built as
 <h2>TODO</h2>
 
 <ul>
-  <li>Number all squares and assign coordinates to each square - in progress</li>
+  <li>Number all squares and assign coordinates to each square - Under action </li>
   <li>Map out each square and it's text/effect, adding sound effects if applicable</li>
   <li>Display square info in popup on move</li>
   <li>Add spidifier to markers on same square - under action</li>
@@ -39,14 +44,14 @@ Player objects are built as
       <li>loop playerArray() until final square reached</li>
       <li>Check for status effects before roll</li>
       <li>Check square attributes after roll</li>
-      <li>Animate marker .gif of current players turn</li>
+      <li><strike>Animate marker .gif of current players turn</strike></li>
     </ul>
   <li>Marker movement</li>
     <ul>
       <li>Marker to animate to square based on roll</li>
       <li>If multiple markers on same square, commence trainer battle</li>
       <li>When passing other markers, or landing on same square, markers should cluster/spiderfy nicely and spread out</li>
-      <li>View port to follow marker while moving</li>
+      <li><strike>View port to follow marker while moving</strike></li>
     </ul>
     
   <li>Implement music</li>
@@ -67,7 +72,7 @@ Player objects are built as
       <li>Miss a turn</li>
       <li>Clefairy</li>
       <li>Take another turn (jigglypuff + rare candy)</li>
-      <li>Gold gyms</li>
+      <li>Gold gyms - under action</li>
       <li>Silver gyms (Safari Zone... ugh)</li>
       <li>Missingno</li>
       <li>Haunter (move back 10)</li>

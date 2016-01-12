@@ -5,10 +5,10 @@ goldGyms = [
             reRoll();
             setTimeout(function () {                
                 if (diceRoll == 2 || diceRoll == 4 || diceRoll == 6) {
-                    gameSquares[6].give = 1
+                    //gameSquares[6].give = 1
                     alert('Give someone a drink!')
                 } else {
-                    gameSquares[6].drink = 1
+                    playerArray[turnCounter].drink += 1
                     alert('Drink 1!')
                 }
             }, 6000);
@@ -209,6 +209,10 @@ var gameSquares = [
         
         text: "A sleeping Snorelax blocks your path",
         action: "Belt out a song of the group's choice to wake him, or take 4 D's",
+        fn: function (){
+            show_modal('pokerap');
+            $('#pokerap').html('<iframe width="560" height="315" src="https://www.youtube.com/embed/-dedmEDT_60?autoplay=1&modestbranding=1&controls=0&loop=1&showinfo=0&rel=0&playlist=-dedmEDT_60" frameborder="0" allowfullscreen></iframe><br /><br /><button onclick="clearModal(pokerap)" style="float: right">Finished</button>');
+        },
         //drink:4,
     }, 
     square30= {//gaaary
@@ -229,16 +233,9 @@ var gameSquares = [
     	latlng: [-210, 67],
         gymGold: true,
         text: "CELADON GYM - something something Erika",
-         action: "Roll a die. 1-3: Stun Spore; Lose a turn. 4-6: Mega Drain; Finish your drink",
-        reRoll(){
-            if(diceRoll ==1||diceRoll == 2 || diceRoll == 3)
-            {
-                missTurn: true;
-            }
-            else{
-                drink: finish;
-            }
-        }
+        action: "Roll a die. 1-3: Stun Spore; Lose a turn. 4-6: Mega Drain; Finish your drink",
+        reRoll: true
+        
     }, 
     square33= {//psyduck
     	latlng: [-185, 67],
@@ -276,7 +273,7 @@ var gameSquares = [
         gymSilver: true, //Silphco
         text: "A Scientist uses his magnet Pokemon!",
         action: "You magnetically attract 1 drink per player in the game",
-        drink: playerTotal,
+        drink: 1*numPlayers,
         //
     }, 
     square38= {//Lapras
@@ -300,14 +297,7 @@ var gameSquares = [
         gymSilver: true, //Silphco
         text: "GIOVANNI",
         action: "Roll a die. 1-3 Give that number. 4-6 Drink that number",
-        reRoll(){
-            if(diceRoll >=3){
-                give: diceRoll;        
-            }
-            else{
-                drink:diceRoll;
-            }
-        }
+        reRoll: true
         //
     }, 
     square41= {//rare candy
@@ -323,9 +313,7 @@ var gameSquares = [
         
         text: "Gaaaaaary. The next time this punk hassles you will be the last.",
         action: "Roll a die and take that many drinks.",
-        reRoll(){
-            drink: diceRoll;
-        }
+        reRoll: true,
         //
     }, 
     square43= {//SAFFRON GYM
@@ -381,11 +369,7 @@ var gameSquares = [
           gymSilver: true,//sadness zone
         text: "Gone fishin'... a wild Dratini appeared!",
         action: "Roll a 1 to catch. Otherwise, drink 1",
-        reRoll(){
-            if(diceRoll != 1 )
-            drink: 1;
-           
-        }
+        reRoll: true
         //
     }, 
     square50= {//Taurus
