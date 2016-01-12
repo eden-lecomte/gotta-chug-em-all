@@ -47,6 +47,14 @@
     <script>
         var diceRoll = 0;
         var numPlayers = 0;
+ 
+        // Game config
+        var fullDrink = 10;
+        var trainerBattles = true;
+        var offTheTable = 0.1;
+        var missTurnsMax = 6;
+        var pokemonEvolve = true;
+
     </script>
 
     <script type="text/javascript" src="js/watch.js"></script>
@@ -99,33 +107,43 @@
                           
             </form>
             
-            <form id='gameConfig' style="display: none">
+            <form id='gameConfig'  autocomplete="off" style="display: none">
                 <h2>Game Configuration</h2>
                 <table>
                 <tr>
                     <th width="70%"></th>
-                    <th>On</th>
-                    <th>Off</th>
+                    <th>Value</th>
+                    <th></th>
                 <tr>
-                    <td><label for="trainerBattles">Trainer battles on/off</label></td>
+                    <td><label for="trainerBattles">Trainer battles?</label><br>
+                    <small>When landing on the same square, trainers both roll - loser drinks the difference.</small></td>
                     <td><input type="radio" name="trainerBattles" value="on" checked></td>
                     <td><input type="radio" name="trainerBattles" value="off"></td>
                 </tr>
                 <tr>
-                    <td><label for="offTable">Dice roll off the table</label></td>
-                    <td><input type="radio" name="offTable" value="on" checked></td>
-                    <td><input type="radio" name="offTable" value="off"></td>
+                    <td><label for="offTable">Chance to roll dice off the table?</label><br>
+                    <small>Each roll, you have a % chance to 'roll off the table' and finish your drink.<br>
+                    <strong>Default:</strong> 1%</small></td>
+                    <td><input type="number" name="offTable" value="1" placeholder="Enter a number"></td>
                 </tr>
                 <tr>
-                    <td><label for="ssAnne">Cap missed turns at 1<br /> Drink more instead...</label></td>
-                    <td><input type="radio" name="ssAnne" value="on"></td>
-                    <td><input type="radio" name="ssAnne" value="off" checked></td>
+                    <td><label for="capTurns">Cap missed turns?</label><br>
+                    <small>The maximum number of missed turns a player can receive in a roll.<br>
+                    <strong>Default:</strong> 6</small></td>
+                    <td><input type="number" name="capTurns" value="6" placeholder="Enter a number"></td>
                 </tr>   
                 <tr>
-                    <td><label for="evolve">Pokemon evolve</label></td>
+                    <td><label for="evolve">Pokemon evolve with drinks?</label><br>
+                    <small>Your Pokemon evolves the more drinks you have.</small></td>
                     <td><input type="radio" name="evolve" value="on" checked></td>
                     <td><input type="radio" name="evolve" value="off"></td>
-                </tr>                               
+                </tr>   
+                <tr>
+                    <td><label for="fullDrink">How many drinks does it take to down a full vessel?<br>
+                    <small>Example: Someone nominates you for 5 drinks, if this value is set to 10, that's half a vessel.<br>
+                    <strong>Default:</strong> 10</small></td>
+                    <td><input type="number" name="fullDrink" value="10" placeholder="Enter a number"></td>
+                </tr>                                               
                 </table>
                  <br />
                 <button  class="btn-bottomright"  type="reset" id="gameStart">Ready to play!</button>

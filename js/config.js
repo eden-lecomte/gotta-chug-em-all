@@ -1,3 +1,4 @@
+
 // pass vars to each function as they are called
 // var pokemon = playerArray[turnCounter].pokemon
 // var name = playerArray[turnCounter].name
@@ -17,16 +18,6 @@ var markerRail = [[-232, 44], [-207, 44]]
 var turnCounter = 0;
 var movesRemaining = 0;
 //**clusters** var markers = L.markerClusterGroup({ disableClusteringAtZoom: 4, maxClusterRadius: 5, spiderfyDistanceMultiplier: 3 });
-
-
-//shortcodes for current player properties
-var _player = playerArray[turnCounter]
-var _square = playerArray[turnCounter].square
-var _pokemon = playerArray[turnCounter].pokemon
-var _name = playerArray[turnCounter].name
-var _coords = playerArray[turnCounter].coords
-var _marker = playerArray[turnCounter].marker
-var _drinks = playerArray[turnCounter].drinks
 
 $( document ).ready(function() {
 // game init     
@@ -80,6 +71,15 @@ $('#playerSetup').on('submit', function(i) {
         
         playerNamesInput.val('');
         playerNamesInput.attr('placeholder', 'Type another one!')
+        
+        //shortcodes for current player properties
+        window._player = playerArray[turnCounter]
+        window._square = playerArray[turnCounter].square
+        window._pokemon = playerArray[turnCounter].pokemon
+        window._name = playerArray[turnCounter].name
+        window._coords = playerArray[turnCounter].coords
+        window._marker = playerArray[turnCounter].marker
+        window._drinks = playerArray[turnCounter].drinks
 
         return false;
     }
@@ -135,8 +135,20 @@ $('#playerIcons > table > tbody > tr > td').on('click', function(){
 
 });
 
-//close final dialog
-$('#gameStart').on('click', function() {
+
+
+
+// Game config screen
+$('#gameConfig').on('submit', function(i) {
+
+    
+    trainerBattles = $(this).find("input[name^='trainerBattles']").val();
+    offTheTable = $(this).find("input[name^='offTable']").val();
+    missTurnsMax = $(this).find("input[name^='capTurns']").val();
+    pokemonEvolve = $(this).find("input[name^='evolve']").val();
+    fullDrink = $(this).find("input[name^='fullDrink']").val();
+    
+    //close final dialog
     $('.intro-container').slideUp('slow');
     $('#map').slideDown('slow');
     $('#game-controls').slideDown('slow');
@@ -276,16 +288,18 @@ function moveMarker() {
         //move marker
 
         
-        var nextSquare = _square + 1;
-        
-        _marker.moveTo(gameSquares[nextSquare].latlng, 800)
+         var marker = playerArray[turnCounter].marker;
+         var loc = playerArray[turnCounter].square;
+         var moveToSquare = loc + 1;
+         
+         marker.moveTo(gameSquares[moveToSquare].latlng, 800)
+ 
+         playerArray[turnCounter].square = moveToSquare;
+         playerArray[turnCounter].coords = gameSquares[moveToSquare].latlng;
 
-        _square = nextSquare;
-        _coords = gameSquares[nextSquare].latlng;
-
-        map.panTo(_coords, {animate: true, duration: 1.0});
+        map.panTo(playerArray[turnCounter].coords, {animate: true, duration: 1.0});
         
-        if (gameSquares[nextSquare].gymGold == true) {
+        if (gameSquares[moveToSquare].gymGold == true) {
             movesRemaining = 0;
             //do gym things
             resolveTurn();
@@ -328,16 +342,18 @@ function rollDice() {
 //Check squares and finish turn
 function resolveTurn() {
 
-    var square = gameSquares[_square];
+    var square = gameSquares[playerArray[turnCounter].square];
+    
+    var drinkVal = getDrinks(square);
     
     setTimeout(function () {    
         if (square.fn) {            
             square.fn();
         };
         setTimeout(function () {                
-            if (square.drink > 0) {
-                _drinks += square.drink
-                alert('' + _name + ', drink ' + square.drink);
+            if (drinkVal > 0) {
+                playerArray[turnCounter].drinks += drinkVal;
+                alert('' + playerArray[turnCounter].name + ', drink ' + drinkVal);
                 }
             setTimeout(function () {   
                 endTurn();
@@ -349,21 +365,21 @@ function resolveTurn() {
 
 //finilise turn, and progress to next player
 function endTurn() {
-    $('.' + _pokemon).css('background-image', '');
-    $('.' + _pokemon).css('background-size', '');
-    $('.' + _pokemon).css('background-position', '');
+    $('.' + playerArray[turnCounter].pokemon).css('background-image', '');
+    $('.' + playerArray[turnCounter].pokemon).css('background-size', '');
+    $('.' + playerArray[turnCounter].pokemon).css('background-position', '');
     
     turnCounter += 1;
     if (turnCounter >= numPlayers) {
         turnCounter = 0;
     } 
     setTimeout(function () {                
-        var currentBkgd = $('.' + _pokemon).css('background-image');
+        var currentBkgd = $('.' + playerArray[turnCounter].pokemon).css('background-image');
         var animatedPath = currentBkgd.replace("''", "").replace("/sprites/", "/sprites/animated/").replace(".png", ".gif");
         
-        $('.' + _pokemon).css('background-image', animatedPath);
-        $('.' + _pokemon).css('background-size', '150%');
-        $('.' + _pokemon).css('background-position', 'center');
+        $('.' + playerArray[turnCounter].pokemon).css('background-image', animatedPath);
+        $('.' + playerArray[turnCounter].pokemon).css('background-size', '150%');
+        $('.' + playerArray[turnCounter].pokemon).css('background-position', 'center');
     }, 500);        
 }
 
@@ -405,4 +421,13 @@ function reRoll() {
 function clearModal(modal_id){
     $(modal_id).html('');
     close_modal();
+};
+
+function getDrinks(square){
+    var drinkFn = $.isFunction(square.drink);
+    if (drinkFn == true) {
+        return square.drink();
+    } else {
+        return square.drink;
+    }   
 };

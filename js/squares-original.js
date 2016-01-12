@@ -25,7 +25,7 @@ var gameSquares = [
     	latlng: [-207, 44],
         text: 'Rattata used Tackle! ... wait, you seriously rolled a 1?',
         action: 'You fainted, finish your drink.' ,
-        drink: 100,
+        drink: fullDrink,
     },
     square2= {//pidge
     	latlng: [-185, 44],
@@ -273,7 +273,7 @@ var gameSquares = [
         gymSilver: true, //Silphco
         text: "A Scientist uses his magnet Pokemon!",
         action: "You magnetically attract 1 drink per player in the game",
-        drink: 1*numPlayers,
+        drink: function(){ return numPlayers }
         //
     }, 
     square38= {//Lapras
