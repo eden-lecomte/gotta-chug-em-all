@@ -362,7 +362,6 @@ var gameSquares = [
         gymSilver: true,//sadness zone
         text: "SAFARI ZONE - Valley of tears",
         action: "Before each turn in the Safari Zone, roll a die. 1-2: You throw bait. Give 1 drink to someone. 3-4: You throw a rock, dick. Lose your turn, drink 4. 5-6: You throw a safari ball. Drink 2 in sadness, because safari balls are just awful.",
-        
         //
     }, 
     square49= {//Dratini
@@ -379,6 +378,98 @@ var gameSquares = [
         text: "A wild Taurus appeared... but instantly fled.",
         action: "Drink 2 for not being quick enough",
         drink: 2,
+        //
+    }, 
+    square51= {//Chansey
+    	latlng: [-209, 185],
+          gymSilver: true,//sadness zone
+        text: "A wild Chansey appeared",
+        action: "Roll the dir. if it's 1-3 Chansey eludes you, drink 1. If 4-6, you capture Chansey, give 2.",
+        drink: 2,
+        //
+    }, 
+    square52= {//FUCHSIA GYM
+    	latlng: [-209, 162],
+          gymGold: true,//sadness zone
+        text: "FUCHSIA GYM - Poison Pokemon are Toxic!",
+        action: "Better get intoxicated! Drink 3.",
+        drink: 3,
+        //
+    }, 
+    square53= {//AWESOME
+    	latlng: [-209, 209],
+        text: "Electrode used Explosion!",
+        action: "Everybody finish their drinks!",
+        give: [100,99]
+        //
+    }, 
+    square54= {//Electabuzz 
+    	latlng: [-209, 115],         
+        text: "Electabuzz used Thunder Punch!",
+        action: "You're paralyzed; miss your next turn.",
+        missTurn: true,
+        //
+    }, 
+    square55= {//poliwag
+    	latlng: [-209, 92],        
+        text: "Poliwag used Hydro Pump!",
+        action: "Shotgun a beer",
+        drink: full,
+        //
+    }, 
+    square56= {//Seaking
+    	latlng: [-185, 92],        
+        text: "Seaking used Waterfall!",
+        action: "...do a waterfall!",
+        give: [50,50],
+        //
+    }, 
+    square57= {//Missingno!
+    	latlng: [-162, 92],        
+        text: "A wild Missingno!",
+        action: "Roll 3 times. Get a 5 or 6, and you continue. If not, you glitched. Restart at Pallet Town.",
+        specialEffect: 'missingno',
+        //
+    }, 
+    square58= {//CINNABAR GYM
+    	latlng: [-137, 92],  
+        gymGold: true,      
+        text: "CINNABAR GYM - Zhu Li, do the thing",
+        action: "Roll a die, Even, roll again. Odd, drink twice as many times as you rolled evens.",
+        //needs a thing
+        //
+    }, 
+    square59= {//Koffing used Haze!
+    	latlng: [-114, 92],        
+        text: "If there's anything nearby to smoke",
+        action: "smoke it to avoid taking 2 drinks",
+        specialEffect: 'Koffing',
+        //
+    }, 
+    square60= {//fossil pokes
+    	latlng: [-92, 92],        
+        text: "You resurrected a Fossil Pokemon! ",
+        action: "Everyone older than you drinks 2.",
+        specialEffect: 'being old',
+        //
+    }, 
+    square61= {//catch
+    	latlng: [-92, 114],        
+        text: "You throw a Pokeball!",
+        action: "If your favorite Pokemon is on the board, roll a 1-3 to catch it! Roll a 4-6 and it got away, drink 3. if your favorite is not on the board, sadly drink 3.",
+        reRoll(){
+            if (diceRoll != 1 ||diceRoll != 2 ||diceRoll != 3)
+            drink: 3;        
+                }
+        //
+    }, 
+    square62= {//Persian
+    	latlng: [-92, 137],        
+        text: "Persian used Fury Swipes!",
+        action: "Roll a die, and give out that many drinks.",
+        reRoll(){
+            give: [1,diceRoll]
+        }
         //
     }, 
                              
