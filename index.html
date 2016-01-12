@@ -115,38 +115,38 @@
                     <th>Value</th>
                     <th></th>
                 <tr>
-                    <td><label for="trainerBattles">Trainer battles?</label><br>
-                    <small>When landing on the same square, trainers both roll - loser drinks the difference.</small></td>
+                    <td><label for="trainerBattles">Trainer battles?<br>
+                    <small>When landing on the same square, trainers both roll - loser drinks the difference.</small></label></td>
                     <td><input type="radio" name="trainerBattles" value="on" checked></td>
                     <td><input type="radio" name="trainerBattles" value="off"></td>
                 </tr>
                 <tr>
-                    <td><label for="offTable">Chance to roll dice off the table?</label><br>
+                    <td><label for="offTable">Chance to roll dice off the table?<br>
                     <small>Each roll, you have a % chance to 'roll off the table' and finish your drink.<br>
-                    <strong>Default:</strong> 1%</small></td>
+                    <strong>Default:</strong> 1%</small></label></td>
                     <td><input type="number" name="offTable" value="1" placeholder="Enter a number"></td>
                 </tr>
                 <tr>
-                    <td><label for="capTurns">Cap missed turns?</label><br>
+                    <td><label for="capTurns">Cap missed turns?<br>
                     <small>The maximum number of missed turns a player can receive in a roll.<br>
-                    <strong>Default:</strong> 6</small></td>
+                    <strong>Default:</strong> 6</small></label></td>
                     <td><input type="number" name="capTurns" value="6" placeholder="Enter a number"></td>
                 </tr>   
                 <tr>
-                    <td><label for="evolve">Pokemon evolve with drinks?</label><br>
-                    <small>Your Pokemon evolves the more drinks you have.</small></td>
+                    <td><label for="evolve">Pokemon evolve with drinks?<br>
+                    <small>Your Pokemon evolves the more drinks you have.</small></label></td>
                     <td><input type="radio" name="evolve" value="on" checked></td>
                     <td><input type="radio" name="evolve" value="off"></td>
                 </tr>   
                 <tr>
                     <td><label for="fullDrink">How many drinks does it take to down a full vessel?<br>
                     <small>Example: Someone nominates you for 5 drinks, if this value is set to 10, that's half a vessel.<br>
-                    <strong>Default:</strong> 10</small></td>
+                    <strong>Default:</strong> 10</small></label></td>
                     <td><input type="number" name="fullDrink" value="10" placeholder="Enter a number"></td>
                 </tr>                                               
                 </table>
                  <br />
-                <button  class="btn-bottomright"  type="reset" id="gameStart">Ready to play!</button>
+                <button  class="btn-bottomright"  type="submit" id="gameStart">Ready to play!</button>
             </form>
         </div>    
     <!-- forms / info end -->    
@@ -170,6 +170,11 @@
   
 <div id='diceWindow' class='modal_window'></div>    
 <div id='pokerap' class='modal_window'></div>    
-
+<div id='squareInfo' class='modal_window'>
+    <div class='squareDesc'></div>    
+    <div class='squareAction'></div>
+    <div class='squareContinue'>Press Space to continue</div>
+    <button class="btn-bottomright"  type="submit" id="squareContinue">Continue</button>
+</div>    
 </body>
 </html>

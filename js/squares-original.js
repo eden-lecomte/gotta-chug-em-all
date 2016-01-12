@@ -25,7 +25,7 @@ var gameSquares = [
     	latlng: [-207, 44],
         text: 'Rattata used Tackle! ... wait, you seriously rolled a 1?',
         action: 'You fainted, finish your drink.' ,
-        drink: fullDrink,
+        drink: function(){ return fullDrink }
     },
     square2= {//pidge
     	latlng: [-185, 44],
@@ -43,7 +43,7 @@ var gameSquares = [
     square4= {//pika
     	latlng: [-137, 44],
         text: 'You caught a Pikachu!',
-        action: 'Drink 2 and replace your started with this walking electric franchise.',
+        action: 'Drink 2 and replace your starter with this walking electric franchise.',
         drink: 2,
         specialEffect: 'pikachu',
     },
@@ -55,11 +55,22 @@ var gameSquares = [
     },     
     square6= {//Pewter Gym
     	latlng: [-90, 44],   
-    	gymGold: true,
         text: 'PEWTER GYM will Brock your world',
         action: 'Roll a die. Even: Give a drink. Odd Take a drink',
-        reroll: true,
-        fn: goldGyms[0].function,
+        gymGold: function () {},
+        drink: function () { 
+            setTimeout(function () {
+                    reRoll();
+                        setTimeout(function () {                
+                            if (diceRoll == 2 || diceRoll == 4 || diceRoll == 6) {
+                                return 0
+                            } else {
+                                playerArray[turnCounter].drink += 1
+                                return 1
+                            }
+                        }, 6000)
+            })
+        }
     },   
     square7= {//nidos
     	latlng: [-67, 44],
@@ -414,7 +425,7 @@ var gameSquares = [
     	latlng: [-209, 92],        
         text: "Poliwag used Hydro Pump!",
         action: "Shotgun a beer",
-        drink: full,
+        drink: function(){ return fullDrink }
         //
     }, 
     square56= {//Seaking
@@ -457,7 +468,7 @@ var gameSquares = [
     	latlng: [-92, 114],        
         text: "You throw a Pokeball!",
         action: "If your favorite Pokemon is on the board, roll a 1-3 to catch it! Roll a 4-6 and it got away, drink 3. if your favorite is not on the board, sadly drink 3.",
-        reRoll(){
+        reRoll: function (){
             if (diceRoll != 1 ||diceRoll != 2 ||diceRoll != 3)
             drink: 3;        
                 }
@@ -467,7 +478,7 @@ var gameSquares = [
     	latlng: [-92, 137],        
         text: "Persian used Fury Swipes!",
         action: "Roll a die, and give out that many drinks.",
-        reRoll(){
+        reRoll: function (){
             give: [1,diceRoll]
         }
         //
