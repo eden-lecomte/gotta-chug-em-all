@@ -237,6 +237,7 @@ h1 {
 	background-repeat: no-repeat;
 }
 
+
 .pokemonSelected {
     opacity: 0.4;
 }
@@ -346,4 +347,17 @@ h1 {
     position: absolute;
     bottom: 5%;
     left: 5%;
+}
+
+.squareGive > table > tbody > tr > td {
+    width: 128px;
+    height: 128px;
+    background-size: contain;
+	background-repeat: no-repeat;
+}
+
+.giveName {
+    position: absolute;
+    bottom: 2px;
+    text-align: center;
 }

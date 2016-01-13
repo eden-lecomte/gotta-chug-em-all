@@ -349,10 +349,81 @@ function squareInfo () {
         $('.squareAction').html('<div>' + square.action  + '</div>');
         show_modal('squareInfo');
         
+        if (square.give) {
+            giveDrinks(square);
+        }
     }, 1000);
 };
 
+function giveDrinks (square) {
+            var giveValue = square.give;
+            var giveDrinks;
+            var givePlayers;
+            
+            function giveDrinksFn () {
+                if ($.isArray(giveValue)) {
+                    giveDrinks = giveValue[0];
+                } else {
+                    giveDrinks = giveValue;
+                }
+            }
+            function givePlayersFn () {
+                if (giveValue[1]) { 
+                    givePlayers = giveValue[1];
+                } else {
+                    givePlayers = 1
+                }
+            };
+            
+            console.log(giveValue, giveDrinks, givePlayers, giveDrinksFn(), givePlayersFn());
+            
+            var playerToDrink;
+        
+            
+            $('.squareGive').append('<p>Pick someone to drink - you have <span class="giveDrinks">' + giveDrinks + '</span> to give to <span class="givePlayers">' + givePlayers + '</span>.</p>');
+            $('.squareGive').append('<table id="giveTable"><tr id="giveTableRow"></tr></table>');
+      
+            for (var i = 0; i < playerArray.length; ++i) {
+               // keep a reference to an individual president object
+                var player = playerArray[i];
+                
+                // properties of the array elements
+                var properties = ['name', 'pokemon'];
+                
+                $('#giveTableRow').append("<td id=" + player['name'] + " class=" + player['pokemon'] + "><span class='giveName'>"+ player['name'] +"</span><span class='numToDrink'></span></td>");
+                 
+            }
 
+
+            $('.squareGive > table > tbody > tr > td').on('click', function(){
+                console.log('clicked on table');
+                if (giveDrinks > 0) { 
+                    var playerSelectedName = $(this).attr('id');
+                    
+                    playerToDrink = function() {
+                        for (var i = 0, len = playerArray.length; i < len; i++) {
+                        if (playerArray[i].name === playerSelectedName)
+                            return playerArray[i]; // Return as soon as the object is found
+                        }
+                    }
+                    
+                    $(this).fadeOut().promise();
+                    $(this).fadeIn().promise();
+
+                    if (givePlayers > 1) {
+                        giveDrinks = giveDrinks - 1;
+                        $('#' + playerSelectedName + ' > .numToDrink').append('I');
+                        $('.giveDrinks').text(giveDrinks);
+                                                    
+                    } else {
+                        $('#' + playerSelectedName + ' > .numToDrink').text(giveDrinks);
+                        giveDrinks = 0;
+                        $('.giveDrinks').text(giveDrinks);
+                    };
+                }
+            })
+    
+}
 
 //Check squares and finish turn
 function resolveTurn() {
@@ -360,6 +431,7 @@ function resolveTurn() {
     var square = gameSquares[playerArray[turnCounter].square];
     
     var drinkVal = getDrinks(square);
+    var drinkNum = parseInt(drinkVal, 10)
     
     setTimeout(function () {    
         if (square.fn) {            
@@ -367,11 +439,11 @@ function resolveTurn() {
         };
         setTimeout(function () {                
             if (drinkVal > 0) {
-                playerArray[turnCounter].drinks = playerArray[turnCounter].drinks + drinkVal;
-                alert('' + playerArray[turnCounter].name + ', drink ' + drinkVal);
+                playerArray[turnCounter].drinks = playerArray[turnCounter].drinks + drinkNum;
+                alert('' + playerArray[turnCounter].name + ', drink ' + drinkNum);
                 }
             setTimeout(function () {   
-                endTurn();
+                endTurn(square);
             }, 1000);             
         }, 1500);
     }, 500);     
@@ -379,15 +451,20 @@ function resolveTurn() {
 };
 
 //finilise turn, and progress to next player
-function endTurn() {
+function endTurn(square) {
     $('.' + playerArray[turnCounter].pokemon).css('background-image', '');
     $('.' + playerArray[turnCounter].pokemon).css('background-size', '');
     $('.' + playerArray[turnCounter].pokemon).css('background-position', '');
     
-    turnCounter += 1;
-    if (turnCounter >= numPlayers) {
-        turnCounter = 0;
-    } 
+    if (square.extraTurn) {
+        return false;
+    } else {
+        turnCounter += 1;
+        if (turnCounter >= numPlayers) {
+            turnCounter = 0;
+        }
+    }
+     
     setTimeout(function () {                
         var currentBkgd = $('.' + playerArray[turnCounter].pokemon).css('background-image');
         var animatedPath = currentBkgd.replace("''", "").replace("/sprites/", "/sprites/animated/").replace(".png", ".gif");
