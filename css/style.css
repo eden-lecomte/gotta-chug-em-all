@@ -40,14 +40,14 @@ body {
 }
 
 .forms-container {
-    font-family: JailBirdJenna;
+    font-family: Verdana, Geneva, Tahoma, sans-serif;
 }
 
 .btn-bottomright {
     position: absolute;
     bottom: 5%;
     right: 5%;
-    font-family: JailBirdJenna;
+    font-family: Verdana, Geneva, Tahoma, sans-serif;
     font-size: 12pt;
 }
 
@@ -333,7 +333,7 @@ h1 {
 #squareInfo {
     background: #fff;
     opacity: 0.9;
-    font-family: JailBirdJenna;
+    font-family: Verdana, Geneva, Tahoma, sans-serif;
     padding: 25px;
     width: 40%;
     border: none;

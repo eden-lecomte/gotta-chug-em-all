@@ -65,7 +65,7 @@ $('#playerSetup').on('submit', function(i) {
                 marker: null,             //  Leaflet marker object
             });
         watch(player, 'drinks', function(){
-            $('#drinks-' + playerArray[turnCounter].pokemon).text(playerArray[turnCounter].drinks)
+            $('#drinks-' + player.pokemon).text(player.drinks)
         });
         $('.nameList').append("<tr><td width='40%'><span>"+ playerNamesString +"</span></td></tr>");
         
@@ -351,6 +351,7 @@ function squareInfo () {
         
         if (square.give) {
             giveDrinks(square);
+            $('#squareContinue').hide();
         }
     }, 1000);
 };
@@ -374,26 +375,19 @@ function giveDrinks (square) {
                     givePlayers = 1
                 }
             };
-            
-            console.log(giveValue, giveDrinks, givePlayers, giveDrinksFn(), givePlayersFn());
-            
+                        
             var playerToDrink;
-        
-            
+
             $('.squareGive').append('<p>Pick someone to drink - you have <span class="giveDrinks">' + giveDrinks + '</span> to give to <span class="givePlayers">' + givePlayers + '</span>.</p>');
             $('.squareGive').append('<table id="giveTable"><tr id="giveTableRow"></tr></table>');
       
             for (var i = 0; i < playerArray.length; ++i) {
                // keep a reference to an individual president object
                 var player = playerArray[i];
-                
                 // properties of the array elements
                 var properties = ['name', 'pokemon'];
-                
-                $('#giveTableRow').append("<td id=" + player['name'] + " class=" + player['pokemon'] + "><span class='giveName'>"+ player['name'] +"</span><span class='numToDrink'></span></td>");
-                 
+                $('#giveTableRow').append("<td id=" + player['name'] + " class=" + player['pokemon'] + "><span class='giveName'>"+ player['name'] +"</span><span class='numToDrink'>0</span></td>");
             }
-
 
             $('.squareGive > table > tbody > tr > td').on('click', function(){
                 console.log('clicked on table');
@@ -410,18 +404,32 @@ function giveDrinks (square) {
                     $(this).fadeOut().promise();
                     $(this).fadeIn().promise();
 
-                    if (givePlayers > 1) {
+                    if (givePlayers !== 1) {
                         giveDrinks = giveDrinks - 1;
-                        $('#' + playerSelectedName + ' > .numToDrink').append('I');
+                        var drinksGiven = $('#' + playerSelectedName + ' > .numToDrink').text();
+                        var drinksGivenNum = parseInt(drinksGiven, 10);
+                        var amountToDrink = drinksGivenNum + 1;
+                        $('#' + playerSelectedName + ' > .numToDrink').text(amountToDrink);
                         $('.giveDrinks').text(giveDrinks);
-                                                    
-                    } else {
+                        playerToDrink.drink = playerToDrink.drink + 1;
+                        checkDrinks();
+                        
+                    } else if (givePlayers == 1) {
                         $('#' + playerSelectedName + ' > .numToDrink').text(giveDrinks);
+                        playerToDrink.drink = giveDrinks;
                         giveDrinks = 0;
                         $('.giveDrinks').text(giveDrinks);
+                        checkDrinks();
                     };
                 }
             })
+        
+        function checkDrinks () {
+            if (giveDrinks == 0) {
+                $('.squareGive > p').text("You've given out all your drinks, now make them drink!");
+                $('#squareContinue').fadeIn('fast');
+            } else return false;
+        } 
     
 }
 
