@@ -90,6 +90,7 @@ var gameSquares = [
         text: 'Clefairy used Metronome!',
         action: 'RNG a square, and drink or give what is says. If no drink is given or taken, just drink 2.',
         specialEffect: 'clefairy',
+        //use roll die with gameSquares.length, if square.drink < 1 then drink = 2
     }, 
     square10= {//Jigglypuff
     	latlng: [-45, 92],
@@ -101,7 +102,15 @@ var gameSquares = [
     	latlng: [-45, 115],
         text: 'Abra used Teleport!',
         action: 'Teleport to the other Abra.',
-        specialEffect: 'abra',
+        fn: function (){
+            var marker = playerArray[turnCounter].marker;
+            marker.moveTo(gameSquares[28].latlng, 800);
+            
+            playerArray[turnCounter].square = 28;
+            playerArray[turnCounter].coords = gameSquares[28].latlng;   
+            
+            map.panTo(playerArray[turnCounter].coords, {animate: true, duration: 1.0});                     
+        },
     }, 
     square12= {//gary
     	latlng: [-45, 137],
@@ -116,7 +125,18 @@ var gameSquares = [
         text: 'CERULEAN GYM - Did you Mist me?',
         action: "Misty's water attacks caused splash damage. You drink 2, everyone else drinks 1",
         drink: 2,
-        give: [1,99],//all take one except player
+        gym: function() {
+            //update drink values
+            for (i = 0; i < playerArray.length; i++) {
+                var player = playerArray[i];
+                player.drinks = playerArray[turnCounter].drinks + 1;
+                $('#drinks-' + player.pokemon).text(player.drinks);
+            };
+            playerArray[turnCounter].drinks = playerArray[turnCounter].drinks - 1;            
+            //update log
+            $('#log').append( '<div>Every other player drinks 1.</div>' );
+            updateLog();                             
+        }
     }, 
     square14= {//slowpizzle
     	latlng: [-45, 185],
@@ -133,20 +153,44 @@ var gameSquares = [
     	latlng: [-45, 232],
         text: 'Meowth used Pay Day',
         action: "Everybody but you takes a drink",
-        give: [1,99],//all but you
+        fn: function() {
+            //update drink values
+            for (i = 0; i < playerArray.length; i++) {
+                var player = playerArray[i];
+                player.drinks = playerArray[turnCounter].drinks + 1;
+                $('#drinks-' + player.pokemon).text(player.drinks);
+            };
+            playerArray[turnCounter].drinks = playerArray[turnCounter].drinks - 1;            
+            //update log
+            $('#log').append( '<div>Everyone except <strong>'+ playerArray[turnCounter].name +'</strong> drinks 1.</div>' );
+            updateLog();                             
+        }
     }, 
     square17= {//Diglett
     	latlng: [-67, 232],
         text: 'Diglett used Dig!',
         action: "Dig deep and finish your drink.",
-        drink: 100,
+        drink: fullDrink,
     }, 
     square18= {//ssanne
     	latlng: [-90, 232],
         text: 'Enjoy your cruise aboard the S.S. Anne! Sucker.',
         action: "Roll a die, you lose that many turns aboard the luxury cruise liner. Roll again, and drink that number during each turn lost.",
-        missTurn: diceRoll[0],
-        drink: diceRoll[1],
+        missTurn: 0,
+        drink: 0,
+        fn: function() {  
+          rollDice();
+          var ssAnneTurns = diceRoll;
+          rollDice();
+          var ssAnneDrinks = diceRoll;
+          var totalDrinks = ssAnneTurns + ssAnneDrinks;
+          $('.squareAction').html('<div><ul><li>You lose: <strong>' + ssAnneTurns + '</strong> turns</li><li>You must have <strong>' + ssAnneDrinks + '</strong> drinks for each missed turn</li></div>');
+          show_modal('squareInfo');
+          playerArray[turnCounter].drinks = playerArray[turnCounter].drinks + totalDrinks;        
+            //update log
+            $('#log').append( '<div><strong>'+ playerArray[turnCounter].name +'</strong> misses <strong>' + ssAnneTurns + '</strong> turns, and must drink <strong>' + ssAnneDrinks + '</strong> drinks for each missed turn.</div>' );
+            updateLog();               
+        }
         //probably easiest to set up something in the give array
     }, 
     square19= {//VERMILION GYM
@@ -155,6 +199,16 @@ var gameSquares = [
         text: 'VERMILION GYM - Let me Surge life into you with some drinks',
         action: "Roll a die. Even, you're paralyzed; take 2 drinks and miss your next turn. Odd, take a drink",
         reroll: true,
+        missTurn: 0,
+        drink: 0,
+        gym: function() {
+            if (diceRoll == 2 || diceRoll == 4 || diceRoll == 6){
+                gameSquares[19].missTurn = 1; //miss a turn
+                gameSquares[19].drink = 2; //drink 2
+            }  else {
+                gameSquares[19].drink = 1; //drink 1
+            }
+        }
     }, 
     square20= {//bicycle
     	latlng: [-137, 232],
@@ -213,7 +267,15 @@ var gameSquares = [
        
         text: "Abra used Teleport!",
         action: "Teleport to the other Abra.",
-        specialEffect: 'teleport',
+        fn: function (){
+            var marker = playerArray[turnCounter].marker;
+            marker.moveTo(gameSquares[11].latlng, 800);
+            
+            playerArray[turnCounter].square = 11;
+            playerArray[turnCounter].coords = gameSquares[11].latlng;   
+            
+            map.panTo(playerArray[turnCounter].coords, {animate: true, duration: 1.0});                     
+        },
     }, 
     square29= {//Snorelax
     	latlng: [-232, 114],
@@ -231,7 +293,17 @@ var gameSquares = [
        
         text: "Gaaaary. Seriously though, is this dude following you or something?",
         action: "Roll a die. Drink that number minus one.",
-        drink: diceRoll-1,
+        fn: function() {  
+            rollDice();
+            var toDrink = diceRoll -1;
+            $('.squareAction').html('<div>You rolled <strong>' + diceRoll + '</strong>. Drink <strong>' + toDrink + '</strong> </div>');
+            show_modal('squareInfo');
+            playerArray[turnCounter].drinks = playerArray[turnCounter].drinks + toDrink;    
+            //update log    
+            $('#log').append( '<div><strong>'+ playerArray[turnCounter].name +'</strong> must drink <strong>' + toDrink + '</strong></div>' );
+            updateLog();                             
+        }
+        
     }, 
     square31= {//evee
     	latlng: [-232, 67],
@@ -245,7 +317,14 @@ var gameSquares = [
         gymGold: true,
         text: "CELADON GYM - something something Erika",
         action: "Roll a die. 1-3: Stun Spore; Lose a turn. 4-6: Mega Drain; Finish your drink",
-        reRoll: true
+        //reRoll: true
+        gym: function() {
+            if (diceRoll == 1 || diceRoll == 2 || diceRoll == 3){
+                gameSquares[32].missTurn = 1; //miss a turn
+            }  else {
+                gameSquares[32].drink = fullDrink; //drink full beverage
+            }
+        }
         
     }, 
     square33= {//psyduck
@@ -259,7 +338,7 @@ var gameSquares = [
     	latlng: [-162, 67],
         
         text: "What? Your Pokemon is evolving!",
-        action: "Let is evolve: Drink 4 and skip the next gym. Stop evolution: take and extra turn.",
+        action: "Let it evolve: Drink 4 and skip the next gym. Stop evolution: take an extra turn.",
         specialEffect: 'evolution',
     }, 
     square35= {//Porygon
@@ -300,7 +379,17 @@ var gameSquares = [
         gymSilver: true, //Silphco
         text: "It's Team Rocket! Watch them defeat themselves with incompetence.",
         action: "Everyone drink to them blasting off",
-        give: [1,99],
+        fn: function() {
+            //update drink values
+            for (i = 0; i < playerArray.length; i++) {
+                var player = playerArray[i];
+                player.drinks = playerArray[turnCounter].drinks + 1;
+                $('#drinks-' + player.pokemon).text(player.drinks);
+            };
+            //update log
+            $('#log').append( '<div>Everyone drink 1.</div>' );
+            updateLog();                             
+        }
         //
     }, 
     square40= {//Giovanni
@@ -308,8 +397,17 @@ var gameSquares = [
         gymSilver: true, //Silphco
         text: "GIOVANNI",
         action: "Roll a die. 1-3 Give that number. 4-6 Drink that number",
-        reRoll: true
-        //
+        give: 0,
+        drink: 0,
+        fn: function() {
+            rollDice();
+            if (diceRoll == 1 || diceRoll == 2 || diceRoll == 3){
+                gameSquares[40].give = diceRoll; //give drink
+            }  else {
+                gameSquares[40].drink = diceRoll; //drink drink
+            }
+        }
+        //needs work here
     }, 
     square41= {//rare candy
     	latlng: [-68, 138],
@@ -331,9 +429,9 @@ var gameSquares = [
     	latlng: [-68, 185],
         gymGold: true,
         text: "SAFFRON GYM - lol gl.",
-        action: "Use psychich powers to pick a number, then roll the die. If it's your number, take and extra turn. If not, drink 2",
+        action: "Use psychic powers to pick a number, then roll the die. If it's your number, take an extra turn. If not, drink 2",
         specialEffect: 'saffronGym',
-        //
+        //create function to input 1 number, check number against diceRoll
     }, 
     square44= {//chugging contest
     	latlng: [-68, 209],

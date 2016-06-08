@@ -40,14 +40,14 @@ body {
 }
 
 .forms-container {
-    font-family: JailBirdJenna;
+    font-family: Verdana, Geneva, Tahoma, sans-serif;
 }
 
 .btn-bottomright {
     position: absolute;
     bottom: 5%;
     right: 5%;
-    font-family: JailBirdJenna;
+    font-family: Verdana, Geneva, Tahoma, sans-serif;
     font-size: 12pt;
 }
 
@@ -253,18 +253,22 @@ h1 {
   font-size: 4em;
   line-height: 100px;
   text-align: center;
+  display: none;
 }
 
 #map {
-    width: 84%;
+    /*width: 84%;*/
     display: inline-block;
-    border-right: 4px solid #000; 
+    /*border-right: 4px solid #000;*/ 
 }
 
 #game-controls {
-    width: 15%;
-    display: inline-block;
-    float: right;
+    width: 0px;
+}
+
+.gameVersion {
+    text-align: center;
+    padding-top: 15px;
 }
 
 #mask{  
@@ -333,7 +337,7 @@ h1 {
 #squareInfo {
     background: #fff;
     opacity: 0.9;
-    font-family: JailBirdJenna;
+    font-family: Verdana, Geneva, Tahoma, sans-serif;
     padding: 25px;
     width: 40%;
     border: none;
@@ -360,4 +364,63 @@ h1 {
     position: absolute;
     bottom: 2px;
     text-align: center;
+}
+
+.log-container {
+    position: fixed;
+    bottom: 10px;
+    left: 10px;
+    z-index: 999;
+    background-color:rgba(255,255,255,0.8);
+        box-shadow: 0px 0px 10px 4px rgba(105, 105, 105, 0.75);
+        -moz-box-shadow: 0px 0px 10px 4px rgba(105, 105, 105, 0.75);
+        -webkit-box-shadow: 0px 0px 10px 4px rgba(105, 105, 105, 0.75);    
+}
+
+.score-container {
+    position: fixed;
+    top: 20%;
+    right: 0px;
+    z-index: 999; 
+    padding: 15px;   
+    background-color:rgba(255,255,255,0.8);   
+        box-shadow: 0px 0px 10px 4px rgba(105, 105, 105, 0.75);
+        -moz-box-shadow: 0px 0px 10px 4px rgba(105, 105, 105, 0.75);
+        -webkit-box-shadow: 0px 0px 10px 4px rgba(105, 105, 105, 0.75);         
+}
+
+.notification-container {
+    position: fixed;
+    bottom: 15%;
+    right: 0px;
+    height: 80px;
+    z-index: 999;
+    padding: 15px; 
+    background-color:rgba(255,255,255,0.8);      
+        box-shadow: 0px 0px 10px 4px rgba(105, 105, 105, 0.75);
+        -moz-box-shadow: 0px 0px 10px 4px rgba(105, 105, 105, 0.75);
+        -webkit-box-shadow: 0px 0px 10px 4px rgba(105, 105, 105, 0.75);     
+}
+
+.dice-container {
+    position: fixed;
+    top: 20px;
+    left: 45%;
+    height: 80px;
+    width: 200px;
+    z-index: 999;
+    padding: 15px;   
+    background-color:rgba(255,255,255,0.8);    
+        box-shadow: 0px 0px 10px 4px rgba(105, 105, 105, 0.75);
+        -moz-box-shadow: 0px 0px 10px 4px rgba(105, 105, 105, 0.75);
+        -webkit-box-shadow: 0px 0px 10px 4px rgba(105, 105, 105, 0.75);  
+    border-radius: 10px;
+}
+
+#log {
+    word-wrap: normal;
+    overflow: auto;
+    width: 500px;
+    height: 150px;
+    opacity: 1;
 }

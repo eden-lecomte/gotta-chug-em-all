@@ -54,6 +54,8 @@
         var offTheTable = 0.1;
         var missTurnsMax = 6;
         var pokemonEvolve = true;
+        
+        var log = $("#log");        
 
     </script>
 
@@ -150,6 +152,7 @@
             </form>
         </div>    
     <!-- forms / info end -->    
+    <span class="gameVersion">Version 0.4.1</span>
 </div>    
 <!-- game intro end -->
 
@@ -157,11 +160,25 @@
     <div id='map' class='map' style="display: none"></div>
 </div>    
 <div id="game-controls" style="display: none">
-    <h2 class='diceRoller' name='diceWindow'>Roll dice!</h2>  
-    <div class="die">0</div>
-    <h2>Drink totals</h2>
-    <div class="drinksTally">
-        <table class="drinksTable"></table>
+    <div class="dice-container">
+        <h2 class='diceRoller' name='diceWindow'>Roll dice!</h2>  
+        <div class="die">0</div>
+    </div>
+    <div class="score-container">
+        <h2>Drink totals</h2>
+        <div class="drinksTally">
+            <table class="drinksTable"></table>
+        </div>
+    </div>
+    <div class="log-container">
+        <div id="log">
+            <p>Welcome to Pokemon!</p>
+            <p><strong>Game config:</strong></p>
+            <ul id="gameConfigReport"></ul>
+        </div>
+    </div>
+    <div class="notification-container">
+        <div id="notification"></div>
     </div>
 </div>       
 

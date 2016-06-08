@@ -12,19 +12,21 @@ Config between boards should be pretty minimal, only changing square attributes 
   <li>Turns based off internal counter, current player identified by turn counter</li>
   <li>Animated markers for current turn</li>
   <li>Markers move +1 square until no moves remaining, or gold gym</li>
+  <li>Display square info in popup on move</li>
 </ul>
 
 Player objects are built as 
 
 <pre>
-  player = {
-      name: playerNamesString,  //  Name entered from title screen
-      pokemon: '',              //  Pokemon selected from title screen
-      status: '',               //  Current status effects (stunned, immune etc)
-      coords: [-230, 45],       //  Location on the gameboard
-      drinks: 0,                //  How many drinks have been allocated to this player (display in console/scoreboard)
-      marker: null,             //  Leaflet marker object
-  });
+        player = {
+            name: playerNamesString,  //  Name entered from title screen
+            pokemon: '',              //  Pokemon selected from title screen
+            status: '',               //  Current status effects (stunned, immune etc)
+            coords: [-230, 45],       //  Location on the gameboard
+            square: 0,                //  Which square are you on
+            drinks: 0,                //  How many drinks have been allocated to this player (display in console/scoreboard)
+            marker: null,             //  Leaflet marker object
+        });
 </pre>
 
 <h2>TODO</h2>
@@ -32,7 +34,6 @@ Player objects are built as
 <ul>
   <li>Number all squares and assign coordinates to each square - Under action </li>
   <li>Map out each square and it's text/effect, adding sound effects if applicable</li>
-  <li>Display square info in popup on move</li>
   <li>Add spidifier to markers on same square - under action</li>
   <li>Trainer battles</li>
     <ul>
@@ -48,7 +49,7 @@ Player objects are built as
     </ul>
   <li>Marker movement</li>
     <ul>
-      <li>Marker to animate to square based on roll</li>
+      <li><strike>Marker to animate to square based on roll</strike></li>
       <li>If multiple markers on same square, commence trainer battle</li>
       <li>When passing other markers, or landing on same square, markers should cluster/spiderfy nicely and spread out</li>
       <li><strike>View port to follow marker while moving</strike></li>
