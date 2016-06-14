@@ -57,20 +57,26 @@ var gameSquares = [
     	latlng: [-90, 44],   
         text: 'PEWTER GYM will Brock your world',
         action: 'Roll a die. Even: Give a drink. Odd Take a drink',
-        gymGold: function () {},
-        drink: function () { 
-            setTimeout(function () {
-                    reRoll();
-                        setTimeout(function () {                
-                            if (diceRoll == 2 || diceRoll == 4 || diceRoll == 6) {
-                                return 0
-                            } else {
-                                playerArray[turnCounter].drink += 1
-                                return 1
-                            }
-                        }, 6000)
-            })
-        }
+        gymGold: true,        
+        gym: function() {  
+          rollDice();
+          
+            if (diceRoll == 2 || diceRoll == 4 || diceRoll == 6){
+                gameSquares[19].give = 1; //give 1
+                $('.squareAction').html('<div>You rolled: <strong>' + diceRoll + '</strong>.</div><div>Give <strong>' + gameSquares[19].give + '</strong> drink</div>');
+                                                                                        
+            }  else {
+                gameSquares[19].drink = 1; //drink 1
+                $('.squareAction').html('<div>You rolled: <strong>' + diceRoll + '</strong>.</div><div>Have <strong>' + gameSquares[19].drink + '</strong> drink</div>');
+                $('#log').append( '<div><strong>'+ playerArray[turnCounter].name +'</strong> drinks <strong>' + gameSquares[19].drink + '</strong></div>' );                
+                playerArray[turnCounter].drinks = playerArray[turnCounter].drinks + gameSquares[19].drink;                
+            }          
+
+            //update log
+            updateLog();               
+        },
+        drink: 0,
+        give: 0,
     },   
     square7= {//nidos
     	latlng: [-67, 44],
@@ -90,6 +96,9 @@ var gameSquares = [
         text: 'Clefairy used Metronome!',
         action: 'RNG a square, and drink or give what is says. If no drink is given or taken, just drink 2.',
         specialEffect: 'clefairy',
+        fn: function() {
+            
+        }
         //use roll die with gameSquares.length, if square.drink < 1 then drink = 2
     }, 
     square10= {//Jigglypuff
@@ -129,13 +138,14 @@ var gameSquares = [
             //update drink values
             for (i = 0; i < playerArray.length; i++) {
                 var player = playerArray[i];
-                player.drinks = playerArray[turnCounter].drinks + 1;
+                player.drinks = player.drinks + 1;
                 $('#drinks-' + player.pokemon).text(player.drinks);
             };
-            playerArray[turnCounter].drinks = playerArray[turnCounter].drinks - 1;            
+            playerArray[turnCounter].drinks = playerArray[turnCounter].drinks + 1;            
             //update log
             $('#log').append( '<div>Every other player drinks 1.</div>' );
-            updateLog();                             
+            updateLog();  
+
         }
     }, 
     square14= {//slowpizzle
@@ -191,17 +201,18 @@ var gameSquares = [
             $('#log').append( '<div><strong>'+ playerArray[turnCounter].name +'</strong> misses <strong>' + ssAnneTurns + '</strong> turns, and must drink <strong>' + ssAnneDrinks + '</strong> drinks for each missed turn.</div>' );
             updateLog();               
         }
-        //probably easiest to set up something in the give array
+
     }, 
     square19= {//VERMILION GYM
     	latlng: [-115, 232],
         gymGold: true,
         text: 'VERMILION GYM - Let me Surge life into you with some drinks',
         action: "Roll a die. Even, you're paralyzed; take 2 drinks and miss your next turn. Odd, take a drink",
-        reroll: true,
+        //reroll: true,
         missTurn: 0,
         drink: 0,
         gym: function() {
+            rollDice();
             if (diceRoll == 2 || diceRoll == 4 || diceRoll == 6){
                 gameSquares[19].missTurn = 1; //miss a turn
                 gameSquares[19].drink = 2; //drink 2

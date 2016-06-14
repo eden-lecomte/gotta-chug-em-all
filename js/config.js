@@ -63,6 +63,9 @@ $('#playerSetup').on('submit', function(i) {
                 square: 0,                //  Which square are you on
                 drinks: 0,                //  How many drinks have been allocated to this player (display in console/scoreboard)
                 marker: null,             //  Leaflet marker object
+                gender: null,             //  Which gender is the player
+                effect: null,             //  Determine status effects on player
+                missedTurns: 0,           //  Current amount of turns to miss
             });
         watch(player, 'drinks', function(){
             $('#drinks-' + player.pokemon).text(player.drinks)
@@ -225,6 +228,20 @@ map.on('zoomend', function() {
 });
 
 
+//function runs at the beginning of the game
+function gameStart(){
+    setTimeout(function () {
+        map.invalidateSize();
+        //**clusters** map.addLayer(markers);
+     
+        //**clusters** var bounds = markers.getBounds(); // [1]
+        //**clusters** map.fitBounds(bounds); // [2] 
+        //update log
+        $('#log').append( '<hr><div>Your turn, <strong>'+ playerArray[turnCounter].name +'</strong>!</div>' );
+        updateLog();          
+    }, 500);
+};
+
 
 //Roll the dice
 $('.dice-container').on('click', function(){  
@@ -280,16 +297,7 @@ $('#squareContinue').on('click', function (){
 
 });
 
-//function runs at the beginning of the game
-function gameStart(){
-    setTimeout(function () {
-        map.invalidateSize();
-        //**clusters** map.addLayer(markers);
-     
-        //**clusters** var bounds = markers.getBounds(); // [1]
-        //**clusters** map.fitBounds(bounds); // [2]  
-    }, 500);
-};
+
 
 
 function moveMarker() {
@@ -361,8 +369,8 @@ function rollDice() {
 function squareInfo () {
     var square = gameSquares[playerArray[turnCounter].square];
     setTimeout(function () {
-        $('.squareDesc').html('<div>' + square.text  + '</div>');
-        $('.squareAction').html('<div>' + square.action  + '</div>');
+        $('.squareDesc').html('<div><h2>' + square.text  + '</h2></div>');
+        $('.squareAction').html('<div><p>' + square.action  + '</p></div>');
         show_modal('squareInfo');
         
         if (square.give) {
@@ -372,6 +380,8 @@ function squareInfo () {
     }, 1000);
 };
 
+//give other people drinks
+//currently gamebreaking
 function giveDrinks (square) {
             var giveValue = square.give;
             var giveDrinks;
@@ -455,20 +465,42 @@ function resolveTurn() {
     var square = gameSquares[playerArray[turnCounter].square];
     
     var drinkVal = getDrinks(square);
-    var drinkNum = parseInt(drinkVal, 10)
+    var drinkNum = parseInt(drinkVal, 10);
+    
+    var missTurns = parseInt(square.missTurn, 10);
+    var specialEffect = square.specialEffect;
     
     setTimeout(function () {    
         if (square.fn) {            
             square.fn();
         };
+      
         setTimeout(function () {                
             if (drinkVal > 0) {
                 playerArray[turnCounter].drinks = playerArray[turnCounter].drinks + drinkNum;
                 
                //update log
-                $('#log').append( '<div>'+ playerArray[turnCounter].name +' must have ' + drinkNum + ' drinks.</div>' );
+                $('#log').append( '<div><strong>'+ playerArray[turnCounter].name +'</strong> must have ' + drinkNum + ' drinks.</div>' );
                 updateLog();                
-                }
+            }
+            if (missTurns > 0) {
+               if (missTurns > missTurnsMax){
+                   missTurns = missTurnsMax
+               }
+               playerArray[turnCounter].missedTurns = missTurns; //add missed turns
+
+               //update log
+                $('#log').append( '<div><strong>'+ playerArray[turnCounter].name +'</strong> misses ' + missTurns + ' turns.</div>' );
+                updateLog();                
+            }       
+            
+            if (specialEffect) {
+               
+
+               //update log
+                $('#log').append( '<div><strong>'+ playerArray[turnCounter].name +'</strong> misses ' + missTurns + ' turns.</div>' );
+                updateLog();                
+            }                      
             setTimeout(function () {   
                 endTurn(square);
             }, 1000);             
@@ -490,23 +522,24 @@ function endTurn(square) {
     };
     
     if (square.extraTurn) {
-        $('.dice-container').show();                
+        $('.dice-container').show();     
+        $('#log').append( '<div>Have another turn, <strong>'+ playerArray[turnCounter].name +'</strong>!</div>' );    
+        updateLog();                           
         return false;
 
     } else {
         turnCounter += 1;
-        
-     
-        
         if (turnCounter >= numPlayers) {
             turnCounter = 0; 
         }
         //update log
         $('#log').append( '<hr><div>Your turn, <strong>'+ playerArray[turnCounter].name +'</strong>!</div>' );
-        updateLog();           
-        $('.dice-container').show();        
+        updateLog();
+        
+        checkStatus(); //check for status effects on next player
     };
     
+    $('.dice-container').show();            
      
     setTimeout(function () {                
         var currentBkgd = $('.' + playerArray[turnCounter].pokemon).css('background-image');
@@ -573,9 +606,9 @@ function goldGym (gym) {
         if (square.gym) {            
             square.gym();
         };        
-        //gym();
+    squareInfo();
     }, 1000);
-    resolveTurn();
+    //resolveTurn(); // not required as clicking continue resolves turn anyway
 };
 
 
@@ -595,3 +628,42 @@ function updateLog() {
 function notify() {
     $('.notification-container').animate({right: "0"});
 }
+
+//check for status at start of turn
+function checkStatus() {
+    var player = playerArray[turnCounter];
+    var effect = player.effect;
+    var missed = player.missedTurns;
+    
+    //miss turn
+    if (missed > 0) {
+        missTurn();
+    };
+    
+    //check status 
+    
+}
+
+
+// player misses his turn
+function missTurn () {
+    //update log
+    $('#log').append( '<div>'+ playerArray[turnCounter].name +' misses a turn!</div>' );
+    updateLog();  
+    
+    playerArray[turnCounter].missedTurns = playerArray[turnCounter].missedTurns - 1; //remove a missed turn
+    // progress to next player
+    turnCounter += 1;
+        if (turnCounter >= numPlayers) {
+            turnCounter = 0; 
+        }
+    //update log
+    $('#log').append( '<hr><div>Your turn, <strong>'+ playerArray[turnCounter].name +'</strong>!</div>' );
+    updateLog(); 
+    
+    setTimeout(function () {                
+        map.setView(playerArray[turnCounter].coords, 4, {animate: true});
+    }, 500);       
+    
+    return false;   
+};
