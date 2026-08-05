@@ -11,14 +11,15 @@ per task, task review after each, broad review at the end.
 
 ---
 
-## Status: 2 of 26 tasks complete
+## Status: 3 of 26 tasks complete
 
 | Task | Status | Commits |
 |---|---|---|
 | 1. Project scaffold and asset diet | ✅ complete, review clean | `2c81ca2..6416e44` |
 | 2. Seeded RNG | ✅ complete | `93f95cf` |
-| 3. Core data types | ⬜ next | — |
-| 4-26 | ⬜ pending | — |
+| 3. Core data types | ✅ complete | `9f1b347` |
+| 4. Extract legacy square coordinates | ⬜ next | — |
+| 5-26 | ⬜ pending | — |
 
 ### Task 1 — what landed
 
@@ -59,6 +60,33 @@ task's determinism rests on it: over 600k rolls the six faces land within
 sequence replays identically from the same seed while diverging from a
 different one.
 
+### Task 3 — what landed
+
+- `src/data/types.ts`, `src/data/starters.ts`, `src/data/__tests__/starters.test.ts`,
+  all transcribed from the plan verbatim. **The plan's code was correct as
+  written** — no deviations. Test failed on the missing import first, then 3/3
+  passed. Full suite 10/10, `tsc -b` clean, `npm run build` succeeds.
+- 20 starter sprites (10 `.png` + 10 `.gif`) copied into `public/img/sprites/`,
+  824K total. They ship to `dist/` correctly.
+
+Plan claims checked against the legacy source rather than taken on trust:
+
+- The ten dex numbers (1, 4, 7, 10, 13, 16, 25, 29, 32, 60) are exactly the
+  sprite refs in `css/pokemon.css`. Confirmed by grep.
+- The `polywag` misspelling is real (`css/pokemon.css:55`), so the plan's
+  rename to `poliwag` at dex 60 is correct.
+
+Gap worth knowing about: **the plan's test asserts sprite path *strings* but
+never checks the files exist.** A typo'd path would pass the suite and only
+surface in Task 17's starter picker. Verified out-of-band that all 20 resolve
+under `public/`; `STARTERS` and every member are `Object.isFrozen`, and
+`getStarter` throws on an unknown id. Consider a real existence check if a
+later task touches this data.
+
+Note `DEX` is typed `Record<StarterId, …>`, so a starter added to the union
+without a roster entry is a compile error — the "ten starters" count is
+typechecked, not just asserted.
+
 ---
 
 ## Plan corrections made during execution
@@ -89,13 +117,14 @@ resuming agent knows why the plan text differs from a naive reading.
 2. Invoke `superpowers:subagent-driven-development`.
 3. Run its `scripts/sdd-workspace` on the plan path to recreate the workspace,
    then seed a fresh ledger from the Status table above. **Do not re-dispatch
-   Tasks 1 or 2** — both are committed.
-4. Resume at **Task 3 (Core data types), BASE `93f95cf`**.
+   Tasks 1, 2 or 3** — all are committed and merged to `2026-rewrite`.
+4. Resume at **Task 4 (Extract legacy square coordinates), BASE `9f1b347`**.
 
-Note: Task 2 was executed directly rather than via a dispatched subagent, so it
-has had no independent task review. The work is small (two files, both verbatim
-from the plan) and is exercised by every later engine task, but a reviewer
-picking this up may want to fold it into the next review package.
+Note: Tasks 2 and 3 were executed directly rather than via dispatched subagents,
+so neither has had an independent task review. Both are small and verbatim from
+the plan (four source files total), and both are exercised by every later engine
+task, but a reviewer picking this up may want to fold them into the next review
+package.
 
 Per task: `scripts/task-brief PLAN N` → dispatch implementer → record BASE before
 dispatching → `scripts/review-package PLAN BASE HEAD` → dispatch task reviewer →
