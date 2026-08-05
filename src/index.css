@@ -1,0 +1,41 @@
+@import "tailwindcss";
+
+@theme {
+  --color-base: #1e1e2e;
+  --color-mantle: #181825;
+  --color-crust: #11111b;
+  --color-surface0: #313244;
+  --color-surface1: #45475a;
+  --color-text: #cdd6f4;
+  --color-subtext: #a6adc8;
+  --color-accent: #89dceb;
+  --color-blue: #89b4fa;
+  --color-green: #a6e3a1;
+  --color-yellow: #f9e2af;
+  --color-red: #f38ba8;
+  --color-mauve: #cba6f7;
+  --font-pokemon: "PokemonSolid", sans-serif;
+}
+
+@font-face {
+  font-family: "PokemonSolid";
+  src: url("/fonts/PokemonSolid.ttf") format("truetype");
+  font-display: swap;
+}
+@font-face {
+  font-family: "PokemonHollow";
+  src: url("/fonts/PokemonHollow.ttf") format("truetype");
+  font-display: swap;
+}
+
+html, body, #root {
+  height: 100dvh;
+  overscroll-behavior: none;
+}
+
+body {
+  margin: 0;
+  background: var(--color-crust);
+  color: var(--color-text);
+  -webkit-tap-highlight-color: transparent;
+}
