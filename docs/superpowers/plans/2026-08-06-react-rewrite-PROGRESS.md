@@ -11,13 +11,14 @@ per task, task review after each, broad review at the end.
 
 ---
 
-## Status: 1 of 26 tasks complete
+## Status: 2 of 26 tasks complete
 
 | Task | Status | Commits |
 |---|---|---|
 | 1. Project scaffold and asset diet | ✅ complete, review clean | `2c81ca2..6416e44` |
-| 2. Seeded RNG | ⬜ next | — |
-| 3-26 | ⬜ pending | — |
+| 2. Seeded RNG | ✅ complete | `93f95cf` |
+| 3. Core data types | ⬜ next | — |
+| 4-26 | ⬜ pending | — |
 
 ### Task 1 — what landed
 
@@ -34,6 +35,29 @@ per task, task review after each, broad review at the end.
 **Verified still present** (Tasks 3, 4, 5, 25 read these; do not delete before
 Task 26): `js/squares-original.js`, `img/sprites/`, `img/board-original.png`,
 `audio/pokerap.mp3`.
+
+### Task 2 — what landed
+
+- `src/engine/rng.ts` and `src/engine/__tests__/rng.test.ts`, both transcribed
+  from the plan verbatim. **The plan's code was correct as written** — no
+  deviations, no debugging needed.
+- Followed TDD as specified: the test failed with the expected
+  "Cannot find module '../rng'" before implementation, then 6/6 passed after.
+- Full suite 7/7 green, `tsc -b` clean, `npm run build` succeeds.
+
+Global constraints verified rather than assumed:
+
+- `src/engine/` imports nothing at all — no React, Zustand or DOM.
+- No `// @vitest-environment jsdom` pragma in the engine tests, so they run
+  under the default node environment (`environment: 0ms` in the reporter).
+- `grep Math.random src/` returns nothing outside `rng.ts`.
+
+Beyond the plan's 6 tests, the PRNG was sanity-checked because every later
+task's determinism rests on it: over 600k rolls the six faces land within
+0.33% of uniform, the seed stream does not repeat within 200k steps (the
+`(seed + 0x6d2b79f5) | 0` Weyl advance has a full 2^32 period), and a 1000-roll
+sequence replays identically from the same seed while diverging from a
+different one.
 
 ---
 
@@ -65,8 +89,13 @@ resuming agent knows why the plan text differs from a naive reading.
 2. Invoke `superpowers:subagent-driven-development`.
 3. Run its `scripts/sdd-workspace` on the plan path to recreate the workspace,
    then seed a fresh ledger from the Status table above. **Do not re-dispatch
-   Task 1** — it is committed and reviewed.
-4. Resume at **Task 2 (Seeded RNG), BASE `6416e44`**.
+   Tasks 1 or 2** — both are committed.
+4. Resume at **Task 3 (Core data types), BASE `93f95cf`**.
+
+Note: Task 2 was executed directly rather than via a dispatched subagent, so it
+has had no independent task review. The work is small (two files, both verbatim
+from the plan) and is exercised by every later engine task, but a reviewer
+picking this up may want to fold it into the next review package.
 
 Per task: `scripts/task-brief PLAN N` → dispatch implementer → record BASE before
 dispatching → `scripts/review-package PLAN BASE HEAD` → dispatch task reviewer →
