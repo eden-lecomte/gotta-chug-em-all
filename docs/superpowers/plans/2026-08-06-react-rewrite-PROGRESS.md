@@ -11,15 +11,16 @@ per task, task review after each, broad review at the end.
 
 ---
 
-## Status: 3 of 26 tasks complete
+## Status: 4 of 26 tasks complete
 
 | Task | Status | Commits |
 |---|---|---|
 | 1. Project scaffold and asset diet | ✅ complete, review clean | `2c81ca2..6416e44` |
 | 2. Seeded RNG | ✅ complete | `93f95cf` |
 | 3. Core data types | ✅ complete | `9f1b347` |
-| 4. Extract legacy square coordinates | ⬜ next | — |
-| 5-26 | ⬜ pending | — |
+| 4. Extract legacy square coordinates | ✅ complete | `094f02a` |
+| 5. Board 1 square data | ⬜ next — **most-capable tier** | — |
+| 6-26 | ⬜ pending | — |
 
 ### Task 1 — what landed
 
@@ -87,6 +88,34 @@ Note `DEX` is typed `Record<StarterId, …>`, so a starter added to the union
 without a roster entry is a compile error — the "ten starters" count is
 typechecked, not just asserted.
 
+### Task 4 — what landed
+
+- `scripts/extract-legacy-squares.mjs`, `src/data/boards/original.coords.json`
+  (63 squares), `src/data/__tests__/coords.test.ts`, and `resolveJsonModule` in
+  `tsconfig.json`. Verbatim from the plan; **correct as written**, no deviations.
+  Script printed `Wrote 63 squares.`, test 4/4, full suite 14/14, `tsc -b` clean,
+  build succeeds. Re-running the script is byte-identical, so the JSON is
+  reproducible from the legacy source.
+
+Plan claims verified against `js/config.js` rather than assumed:
+
+- `w = 2216` (line 180) and `maxZoom: 4` (line 172) with bounds unprojected at
+  `getMaxZoom()-1` = zoom 3, so the `SPAN = 277` constant (`2216 / 2^3`) is
+  right. Square 0's `[-232, 44]` converts to `x 15.884, y 83.755`, exactly the
+  test's expectation.
+- **The square-53 bug is real**: `js/squares-original.js:520` gives square 53
+  `latlng: [-209, 209]`, byte-identical to square 50 at line 496. The script's
+  hardcoded reposition is justified.
+
+Extra check worth repeating on any future board: the uniqueness assertion only
+catches *duplicate* positions, not a square that is unique but in the wrong
+place. Measuring the distance between consecutive squares along the spiral
+found every step in 7.58..9.39 units (median 8.30) with zero outliers above 2x
+median — so square 53 is now correctly placed and no other square is stranded.
+That sweep is the cheap way to validate Task 5's data too.
+
+Only square 0 (`Start`) has an empty `action`; every square has `text`.
+
 ---
 
 ## Plan corrections made during execution
@@ -117,14 +146,19 @@ resuming agent knows why the plan text differs from a naive reading.
 2. Invoke `superpowers:subagent-driven-development`.
 3. Run its `scripts/sdd-workspace` on the plan path to recreate the workspace,
    then seed a fresh ledger from the Status table above. **Do not re-dispatch
-   Tasks 1, 2 or 3** — all are committed and merged to `2026-rewrite`.
-4. Resume at **Task 4 (Extract legacy square coordinates), BASE `9f1b347`**.
+   Tasks 1-4** — all are committed and merged to `2026-rewrite`.
+4. Resume at **Task 5 (Board 1 square data), BASE `094f02a`**.
 
-Note: Tasks 2 and 3 were executed directly rather than via dispatched subagents,
-so neither has had an independent task review. Both are small and verbatim from
-the plan (four source files total), and both are exercised by every later engine
-task, but a reviewer picking this up may want to fold them into the next review
-package.
+Task 5 is the first of the five most-capable-tier tasks. Its failure mode is
+*abbreviation* — a worker emitting `// ... remaining squares` and silently
+dropping half the board. Guard it by asserting all 63 squares carry effects
+before accepting the task, and re-run the consecutive-distance sweep from
+Task 4's notes.
+
+Note: Tasks 2, 3 and 4 were executed directly rather than via dispatched
+subagents, so none has had an independent task review. All three are small and
+verbatim from the plan, and all are exercised by every later engine task, but a
+reviewer picking this up may want to fold them into the next review package.
 
 Per task: `scripts/task-brief PLAN N` → dispatch implementer → record BASE before
 dispatching → `scripts/review-package PLAN BASE HEAD` → dispatch task reviewer →
