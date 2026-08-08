@@ -20,8 +20,9 @@ per task, task review after each, broad review at the end.
 | 3. Core data types | ✅ complete | `9f1b347` |
 | 4. Extract legacy square coordinates | ✅ complete | `094f02a` |
 | 5. Board 1 square data | ✅ complete (1 deviation) | `35abc38` |
-| 6. Engine state types and value resolution | ⬜ next | — |
-| 7-26 | ⬜ pending | — |
+| 6. Engine state types and value resolution | ✅ complete (1 deviation) | `741c010` |
+| 7. Effect interpreter — deterministic effects | ⬜ next | — |
+| 8-26 | ⬜ pending | — |
 
 ### Task 1 — what landed
 
@@ -167,6 +168,42 @@ evaluating `js/squares-original.js` and reading its flags gives `gymGold` =
 `23,24,25,26,27,36,37,38,39,40,48,49,50,51`. **Both match the new board
 exactly.**
 
+### Task 6 — what landed
+
+- `src/engine/types.ts`, `src/engine/amount.ts`, `src/engine/targets.ts` and
+  their two tests. amount 9/9, targets 8/8, full suite 40/40, `tsc -b` clean,
+  build succeeds.
+
+**Deviation 2: `src/engine/types.ts` does not compile as written.** The plan's
+import list pulls in `PromptId`, but `Prompt` and `PromptResult` spell their ids
+as string literals (each variant carries a different payload), so it is never
+used — and `noUnusedLocals` makes that error TS6196, a hard failure. Removed it
+from the import and left a comment saying why.
+
+Before accepting that removal, confirmed with a temporary type-level assertion
+(`[A] extends [B] ? [B] extends [A] …`) that `Prompt['id']` and
+`PromptResult['id']` are each **exactly** `PromptId` — bidirectionally, so a
+prompt cannot be silently missing. The check file was deleted after it passed;
+recreate it if the prompt unions are edited in Tasks 9 or 23.
+
+Checks beyond the plan's tests:
+
+- **First contact between engine code and real board data**: bound every var
+  each square declares, then pushed all **127 Amounts** in `BOARD_ORIGINAL`
+  through `resolveAmount`. Every one returned a non-negative integer, none
+  threw. This is what catches a binder/reference name mismatch that Task 5's
+  static scan cannot.
+- `resolveTarget` returns correct seat-ordered ids for all four targets;
+  `updatePlayer` and `pushLog` leave the input state untouched.
+- Engine purity holds: no React, Zustand, DOM or `Math.random` anywhere under
+  `src/engine/`, and no jsdom pragma, so the tests stay DOM-free.
+
+Note on `resolveAmount`: the zero-clamp is applied **once at the top level**,
+not per sub-expression. That is correct for the current board (the only negative
+is square 30's `offset … -1`), but a future rule nesting a negative inside a
+`product` or `half` would see it propagate. Worth remembering rather than
+changing now.
+
 ---
 
 ## Plan corrections made during execution
@@ -194,6 +231,11 @@ resuming agent knows why the plan text differs from a naive reading.
    byte-identical RGB. Applies to any future board image too. Full measurements
    in the Task 5 notes above.
 
+4. **Task 6 Step 1 imports `PromptId` but never uses it**, which is error TS6196
+   under `noUnusedLocals`. The plan's Step 1 listing now omits it. If you are
+   copying from an older revision of the plan, drop `PromptId` from the
+   `../data/types` import in `src/engine/types.ts`.
+
 ---
 
 ## How to resume
@@ -203,17 +245,24 @@ resuming agent knows why the plan text differs from a naive reading.
 2. Invoke `superpowers:subagent-driven-development`.
 3. Run its `scripts/sdd-workspace` on the plan path to recreate the workspace,
    then seed a fresh ledger from the Status table above. **Do not re-dispatch
-   Tasks 1-5** — all are committed and merged to `2026-rewrite`.
-4. Resume at **Task 6 (Engine state types and value resolution), BASE `35abc38`**.
+   Tasks 1-6** — all are committed and merged to `2026-rewrite`.
+4. Resume at **Task 7 (Effect interpreter — deterministic effects), BASE
+   `741c010`**.
 
-Task 5's board data is now the substrate for Tasks 6-13. The audit script
-described in its notes (unbound-var scan, empty-effect scan, JSON round-trip,
-kind tally) is worth re-running whenever that data changes.
+Task 5's board data is now the substrate for Tasks 6-13. Two audit scripts from
+the notes above are worth re-running whenever engine or board data changes: the
+board audit (unbound-var scan, empty-effect scan, JSON round-trip, kind tally)
+and the Task 6 sweep that resolves all 127 board Amounts through
+`resolveAmount`.
 
-Note: Tasks 2-5 were executed directly rather than via dispatched subagents, so
+The plan's code has now been wrong twice (corrections 3 and 4), both caught by
+running it rather than reading it. Typecheck every task before trusting its
+listing.
+
+Note: Tasks 2-6 were executed directly rather than via dispatched subagents, so
 none has had an independent task review. Tasks 2-4 are small and verbatim from
-the plan; **Task 5 is large (63 squares) and carries a deliberate deviation**
-(lossless WebP), so it is the one most worth a reviewer's attention.
+the plan; **Task 5 (63 squares, lossless-WebP deviation) and Task 6 (dropped
+import) are the two most worth a reviewer's attention.**
 
 Per task: `scripts/task-brief PLAN N` → dispatch implementer → record BASE before
 dispatching → `scripts/review-package PLAN BASE HEAD` → dispatch task reviewer →

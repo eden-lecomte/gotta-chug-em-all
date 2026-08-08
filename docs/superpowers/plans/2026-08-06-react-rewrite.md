@@ -1312,8 +1312,11 @@ git commit -m "feat(data): board 1 squares as declarative effects, fixing 4 lega
 Create `src/engine/types.ts`:
 
 ```ts
+// Note: `Prompt`/`PromptResult` below spell their ids as literals rather than
+// reusing `PromptId`, since each variant carries a different payload. Do not
+// import `PromptId` here — it would be unused, which `noUnusedLocals` rejects.
 import type {
-  Effect, Gender, PromptId, StarterId, StatusExpiry, StatusId,
+  Effect, Gender, StarterId, StatusExpiry, StatusId,
 } from '../data/types';
 
 export type PlayerId = string;
