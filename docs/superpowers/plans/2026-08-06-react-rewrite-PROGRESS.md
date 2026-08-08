@@ -19,8 +19,9 @@ per task, task review after each, broad review at the end.
 | 2. Seeded RNG | ✅ complete | `93f95cf` |
 | 3. Core data types | ✅ complete | `9f1b347` |
 | 4. Extract legacy square coordinates | ✅ complete | `094f02a` |
-| 5. Board 1 square data | ⬜ next — **most-capable tier** | — |
-| 6-26 | ⬜ pending | — |
+| 5. Board 1 square data | ✅ complete (1 deviation) | `35abc38` |
+| 6. Engine state types and value resolution | ⬜ next | — |
+| 7-26 | ⬜ pending | — |
 
 ### Task 1 — what landed
 
@@ -116,11 +117,61 @@ That sweep is the cheap way to validate Task 5's data too.
 
 Only square 0 (`Start`) has an empty `action`; every square has `text`.
 
+### Task 5 — what landed
+
+- `src/data/boards/original.ts` (all 63 squares) and
+  `src/data/__tests__/original.test.ts`. Test failed on the missing import
+  first, then 9/9 passed. Full suite 23/23, `tsc -b` clean, build succeeds.
+- **The feared abbreviation did not happen.** `RULES` carries all 63 ids,
+  contiguous 0..62, and the source contains no `...` / `remaining` / `TODO`
+  elision markers. Worth re-running that grep on any future board.
+
+**Deviation 1 (first real plan bug): the WebP encoding was wrong.** Step 6
+specifies `--quality 82` lossy and predicts a file "well under the 644KB
+original". Executed as written it produced **1.3MB — twice the PNG**. The board
+is flat-colour pixel art with tiny per-square text, exactly the content lossy
+YUV encoding handles worst. Measured alternatives:
+
+| encoding | size |
+|---|---|
+| lossless | **328KB** |
+| near-lossless q80 | 332KB |
+| lossy q82 (plan) | 1293KB |
+| lossy q90 | 1536KB |
+| original PNG | 644KB |
+
+Shipped **lossless** — it is the only option that meets the plan's own stated
+intent. Verified the RGB data is byte-identical to the source PNG (0 differing
+subpixels) and that the alpha channel sharp dropped was fully opaque (0
+non-opaque pixels), so nothing was lost. **Any later board conversion should
+use lossless, not the plan's q82.** Plan Step 6 has been corrected in place
+(see correction 3 below), so the plan text now reads `--lossless`.
+
+Correctness checks beyond the plan's 9 tests — none of these are covered by the
+suite, and each would have surfaced only much later:
+
+- **Unbound `var` refs: none.** Every `{kind:'var'}` is bound by an earlier
+  `roll` / `rollBranch as` / `rollWhile as` in the same square's queue. An
+  unbound one would not fail typecheck and would only break in Task 7-8.
+- **Empty-effect squares: only square 0 (Start)**, as intended — a dropped rule
+  would show up here.
+- **JSON round-trip is identical and there are zero `undefined`-valued keys**,
+  satisfying the global serializability constraint.
+- **Kind tally**: 1 start, 40 normal, 7 goldGym, 14 silverZone, 1 finish = 63.
+- Cerulean Gym (13) is the one of the four bug fixes with **no dedicated test**;
+  verified by hand that it is `self 2, everyoneElse 1`.
+
+Classification cross-checked against the legacy source, not just the plan:
+evaluating `js/squares-original.js` and reading its flags gives `gymGold` =
+`6,13,19,32,43,52,58` and silver-flagged (`gymSilver`/`silphCo`/`safariZone`) =
+`23,24,25,26,27,36,37,38,39,40,48,49,50,51`. **Both match the new board
+exactly.**
+
 ---
 
 ## Plan corrections made during execution
 
-Both are already applied to `2026-08-06-react-rewrite.md`. Listed here so a
+All are already applied to `2026-08-06-react-rewrite.md`. Listed here so a
 resuming agent knows why the plan text differs from a naive reading.
 
 1. **`npm create vite` cannot run here.** The plan's Task 1 Step 3 assumed an
@@ -137,6 +188,12 @@ resuming agent knows why the plan text differs from a naive reading.
    copy them verbatim. `defineConfig` is imported from `vitest/config`, not
    `vite`, so the `test` field is typed.
 
+3. **Task 5 Step 6 specified the wrong WebP encoding.** `--quality 82` lossy
+   produced 1293KB against a 644KB source PNG — twice the size, and lossy on
+   pixel-art text. Step 6 now reads `--lossless`, which yields 328KB with
+   byte-identical RGB. Applies to any future board image too. Full measurements
+   in the Task 5 notes above.
+
 ---
 
 ## How to resume
@@ -146,19 +203,17 @@ resuming agent knows why the plan text differs from a naive reading.
 2. Invoke `superpowers:subagent-driven-development`.
 3. Run its `scripts/sdd-workspace` on the plan path to recreate the workspace,
    then seed a fresh ledger from the Status table above. **Do not re-dispatch
-   Tasks 1-4** — all are committed and merged to `2026-rewrite`.
-4. Resume at **Task 5 (Board 1 square data), BASE `094f02a`**.
+   Tasks 1-5** — all are committed and merged to `2026-rewrite`.
+4. Resume at **Task 6 (Engine state types and value resolution), BASE `35abc38`**.
 
-Task 5 is the first of the five most-capable-tier tasks. Its failure mode is
-*abbreviation* — a worker emitting `// ... remaining squares` and silently
-dropping half the board. Guard it by asserting all 63 squares carry effects
-before accepting the task, and re-run the consecutive-distance sweep from
-Task 4's notes.
+Task 5's board data is now the substrate for Tasks 6-13. The audit script
+described in its notes (unbound-var scan, empty-effect scan, JSON round-trip,
+kind tally) is worth re-running whenever that data changes.
 
-Note: Tasks 2, 3 and 4 were executed directly rather than via dispatched
-subagents, so none has had an independent task review. All three are small and
-verbatim from the plan, and all are exercised by every later engine task, but a
-reviewer picking this up may want to fold them into the next review package.
+Note: Tasks 2-5 were executed directly rather than via dispatched subagents, so
+none has had an independent task review. Tasks 2-4 are small and verbatim from
+the plan; **Task 5 is large (63 squares) and carries a deliberate deviation**
+(lossless WebP), so it is the one most worth a reviewer's attention.
 
 Per task: `scripts/task-brief PLAN N` → dispatch implementer → record BASE before
 dispatching → `scripts/review-package PLAN BASE HEAD` → dispatch task reviewer →

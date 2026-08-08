@@ -1264,13 +1264,20 @@ rule does not match any `Effect` variant — fix the data, not the type.
 
 - [ ] **Step 6: Convert the board image to WebP**
 
+Use **lossless** WebP. The board is flat-colour pixel art with tiny per-square
+text — the content lossy encoding handles worst. Lossy `--quality 82` was
+measured at 1293KB, *twice* the size of the source PNG, on top of visibly
+degrading the square text. Lossless is 328KB.
+
 ```bash
-npx --yes sharp-cli -i img/board-original.png -o public/img/ --format webp --quality 82
+npx --yes sharp-cli -i img/board-original.png -o public/img/ --format webp --lossless
 rm -f public/img/board-original.png
 ls -lh public/img/board-original.webp
 ```
 
-Expected: `board-original.webp` exists and is well under the 644KB original.
+Expected: `board-original.webp` exists at roughly 328KB, well under the 644KB
+original. Sharp drops the source's alpha channel, which is fully opaque, so the
+RGB data stays byte-identical.
 
 - [ ] **Step 7: Run the test to verify it passes**
 
