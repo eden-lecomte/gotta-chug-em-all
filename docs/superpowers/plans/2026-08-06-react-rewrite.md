@@ -2046,7 +2046,7 @@ export function drainQueue(state: GameState): GameState {
 - [ ] **Step 5: Run the test to verify it passes**
 
 Run: `npx vitest run src/engine/__tests__/effects.test.ts`
-Expected: PASS, 16 tests.
+Expected: PASS, 17 tests.
 
 - [ ] **Step 6: Commit**
 
