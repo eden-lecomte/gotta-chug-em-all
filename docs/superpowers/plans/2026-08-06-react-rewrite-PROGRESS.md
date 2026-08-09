@@ -288,9 +288,9 @@ Tasks 2-6 were executed **directly, not via dispatched subagents** — the
 `superpowers:subagent-driven-development` skill is not available in every
 session. Consequences a resuming agent should know:
 
-- **No task has had an independent review since Task 1.** Tasks 2-4 are small
-  and verbatim from the plan. **Tasks 5 and 6 are the ones worth reviewing**:
-  Task 5 is 63 squares with a deliberate deviation, Task 6 dropped an import.
+- ~~**No task has had an independent review since Task 1.**~~ Tasks 5 and 6 were
+  reviewed on 2026-08-10; see "Review of Tasks 5 and 6" below. Tasks 2-4 remain
+  unreviewed but are small and verbatim from the plan.
 - Each task still followed the plan's TDD steps (test written, observed failing
   for the right reason, then implemented) and was committed separately from its
   ledger update, so per-task diffs stay reviewable.
@@ -298,6 +298,67 @@ session. Consequences a resuming agent should know:
   then fast-forward merged into `2026-rewrite` and both pushed. The two branches
   are kept identical. The working-branch name is historical — it is a workspace,
   not scoped to Task 2. No PR was opened.
+
+---
+
+## Review of Tasks 5 and 6 (2026-08-10)
+
+Method: every file from both commits diffed against its plan code block, then
+all 63 squares cross-read against `js/squares-original.js` and the player-facing
+`action` strings in `original.coords.json`.
+
+**No Critical findings. No transcription drift and no weakened tests** — every
+file in `35abc38` and `741c010` is byte-identical to its plan block, except one
+comment in `src/engine/types.ts` that drops the plan's warning about *why*
+`PromptId` must not be imported. Restore the fuller wording if that file is
+touched again, or the import comes back.
+
+The four claimed legacy bug fixes (squares 6, 13, 16, 39, 54) are all real and
+correctly encoded, verified against the legacy closures. Squares 32, 40, 49, 51,
+57, 58 and 62 — the ones with non-obvious branch structure — also match.
+
+### Open findings: three squares where the displayed text and the effects disagree
+
+Each square's `action` string is the legacy text verbatim and is shown to
+players. In these three the encoded effects do something different. None is a
+crash; all three are **rule decisions someone has to make**, so they are logged
+rather than silently changed.
+
+1. **Square 12 (Gary) — rounding is inverted relative to the text.** The action
+   reads "Roll a die. Drink half, give half(round up)", but the effects round
+   the *drink* up and the *give* down (`half … round:'up'` then `round:'down'`).
+   On a roll of 5 the screen implies give 3, the engine gives 2. The plan chose
+   this deliberately — it conserves the roll, and the plan's own amount test
+   pins "drink 3, give 2 on a 5" — so fixing it means editing the plan, the
+   test and the board data together. Alternative: reword the action text.
+   The legacy code (`drink: diceRoll/2, give: diceRoll/2`) rounds neither, so
+   the text is the only authority here.
+
+2. **Square 9 (Clefairy) — the fallback rule has no representation.** The action
+   promises "If no drink is given or taken, just drink 2", but the square's only
+   effect is `{kind:'randomSquare'}` and no `Effect` variant can express "if
+   that produced no drink, drink 2". **Task 8 implements `randomSquare` and must
+   decide this.** Two other hazards belong to the same decision: the random pick
+   can land on square 9 itself (unbounded recursion) and on squares 11/28 (the
+   Abra teleports), neither of which the data guards against.
+
+3. **Square 38 (Lapras) — `confuseRay` expiry contradicts its own rule.** The
+   status is applied with `expires: 'afterNextTurn'`, which clears it
+   unconditionally after one turn, but both the action text and the `StatusId`
+   comment in `src/data/types.ts` say it clears only on a roll of 1-3.
+   `StatusExpiry` has no "clears on a condition" variant. **Task 10 owns status
+   lifecycle and must reconcile the two**, either by adding an expiry kind or by
+   having the confuse-ray roll remove the status explicitly.
+
+### Minor, no action needed now
+
+- `Effect` declares `{kind:'moveBy'}` but no square uses it — it exists for
+  Task 8's `randomSquare` and Task 11. Keep, do not prune.
+- `getSquare` indexes `board.squares[id]` by array position, not by `id`. Safe
+  today (ids are contiguous 0..62, checked) but it is a lookup that silently
+  returns the wrong square if a board ever numbers its squares sparsely.
+- `resolveTarget('everyone')` includes players who have already finished. Fine
+  for a drinking game; noted in case Task 11 wants otherwise.
 
 ---
 

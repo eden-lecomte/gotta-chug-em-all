@@ -1,5 +1,6 @@
 // Note: `Prompt`/`PromptResult` below spell their ids as literals rather than
-// reusing `PromptId`, since each variant carries a different payload.
+// reusing `PromptId`, since each variant carries a different payload. Do not
+// import `PromptId` here — it would be unused, which `noUnusedLocals` rejects.
 import type {
   Effect, Gender, StarterId, StatusExpiry, StatusId,
 } from '../data/types';
