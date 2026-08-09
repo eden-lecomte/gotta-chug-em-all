@@ -4,14 +4,17 @@ Tracked handoff record for `2026-08-06-react-rewrite.md`. The SDD working
 ledger lives at `.superpowers/sdd/2026-08-06-react-rewrite/progress.md`, which
 is **gitignored** — this file is the durable copy that survives a fresh clone.
 
-**Branch:** `2026-rewrite`
+**Branch:** `2026-rewrite` (trunk of the rewrite; `master` is still the live
+jQuery game and must not be merged into until Task 26)
 **Base commit (pre-rewrite):** `2c81ca2`, also tagged **`v0-jquery`**
-**Method:** superpowers:subagent-driven-development — fresh implementer subagent
-per task, task review after each, broad review at the end.
+**Method as planned:** superpowers:subagent-driven-development — fresh
+implementer subagent per task, task review after each, broad review at the end.
+**Method actually used for Tasks 2-6:** direct execution (see "Deviation from
+the SDD method" below).
 
 ---
 
-## Status: 4 of 26 tasks complete
+## Status: 6 of 26 tasks complete
 
 | Task | Status | Commits |
 |---|---|---|
@@ -238,11 +241,72 @@ resuming agent knows why the plan text differs from a naive reading.
 
 ---
 
+## Environment notes
+
+Rediscovering these costs a fresh session real time.
+
+- **`node_modules` is not committed.** A fresh clone must `npm install` before
+  anything runs (~150 packages, a few seconds).
+- **Do not commit `package-lock.json` churn.** npm 10.9.7 rewrites the lockfile's
+  `version` field to `0.0.0` and strips `libc` metadata from optional deps. It is
+  noise from a version skew, unrelated to any task — `git checkout
+  package-lock.json` before committing. (The committed lockfile says `1.0.0`
+  while `package.json` says `0.0.0`; pre-existing and harmless.)
+- **Verification loop used per task**, all four should be clean before commit:
+  `npx vitest run <the task's test file>` → `npm test` → `npx tsc -b --noEmit`
+  → `npm run build`.
+- **Running a `.ts` module ad hoc**: `npx vite-node <file.mjs>` handles TS
+  imports. It needs a *file*; `vite-node -e "…"` is not supported.
+- **`sharp` is not a project dependency.** Task 5 used the npx-cached copy at
+  `/root/.npm/_npx/*/node_modules/sharp`. Re-resolve that path rather than
+  assuming it, or `npx --yes sharp-cli`.
+- **Playwright**: the pre-installed browser is at
+  `/opt/pw-browsers/chromium-1194/chrome-linux/chrome`. A fresh `npm i
+  playwright` pulls a version expecting a different build and fails; pass
+  `executablePath` explicitly. Do not run `playwright install`.
+- **The sandbox proxy blocks `github.io` and the GitHub Pages API**, so the
+  deployed site cannot be checked from here. It does allow npm and git.
+
+### GitHub Pages, for when Task 26 deploys
+
+Project-site URL is `https://eden-lecomte.github.io/gotta-chug-em-all/`. Pages
+is currently serving the `gh-pages` branch, a 2016 auto-generated stub that is
+not the game. Two things follow:
+
+- Switching Settings → Pages → Source to `master` / `root` publishes the legacy
+  game; that is what a user asking for "the old site" wants.
+- The rewrite's assets use **absolute** paths (`/img/sprites/1.png`,
+  `/img/board-original.webp`). Served from the `/gotta-chug-em-all/` subpath
+  those resolve to the domain root and 404. **Task 26 must set `base:
+  '/gotta-chug-em-all/'` in `vite.config.ts`** before deploying.
+
+---
+
+## Deviation from the SDD method
+
+Tasks 2-6 were executed **directly, not via dispatched subagents** — the
+`superpowers:subagent-driven-development` skill is not available in every
+session. Consequences a resuming agent should know:
+
+- **No task has had an independent review since Task 1.** Tasks 2-4 are small
+  and verbatim from the plan. **Tasks 5 and 6 are the ones worth reviewing**:
+  Task 5 is 63 squares with a deliberate deviation, Task 6 dropped an import.
+- Each task still followed the plan's TDD steps (test written, observed failing
+  for the right reason, then implemented) and was committed separately from its
+  ledger update, so per-task diffs stay reviewable.
+- **Branch/merge workflow used:** work committed on `claude/refactor-task-2-kt6myn`,
+  then fast-forward merged into `2026-rewrite` and both pushed. The two branches
+  are kept identical. The working-branch name is historical — it is a workspace,
+  not scoped to Task 2. No PR was opened.
+
+---
+
 ## How to resume
 
 1. Read `docs/superpowers/plans/2026-08-06-react-rewrite.md` — the plan carries
    full implementation code for every task.
-2. Invoke `superpowers:subagent-driven-development`.
+2. Invoke `superpowers:subagent-driven-development` **if it is available**;
+   otherwise execute directly, keeping the TDD steps and per-task commits.
 3. Run its `scripts/sdd-workspace` on the plan path to recreate the workspace,
    then seed a fresh ledger from the Status table above. **Do not re-dispatch
    Tasks 1-6** — all are committed and merged to `2026-rewrite`.
@@ -256,13 +320,36 @@ and the Task 6 sweep that resolves all 127 board Amounts through
 `resolveAmount`.
 
 The plan's code has now been wrong twice (corrections 3 and 4), both caught by
-running it rather than reading it. Typecheck every task before trusting its
-listing.
+running it rather than reading it. **Typecheck every task before trusting its
+listing** — Task 6's bug was a hard compile error, not a subtle one, and would
+have been found in seconds by running `tsc` right after writing the file rather
+than at the end of the task.
 
-Note: Tasks 2-6 were executed directly rather than via dispatched subagents, so
-none has had an independent task review. Tasks 2-4 are small and verbatim from
-the plan; **Task 5 (63 squares, lossless-WebP deviation) and Task 6 (dropped
-import) are the two most worth a reviewer's attention.**
+### State at handoff
+
+Tasks 1-6 complete. `origin/2026-rewrite` and
+`origin/claude/refactor-task-2-kt6myn` both at **`d373c73`**, working tree
+clean, nothing unpushed.
+
+```
+d373c73  docs: ledger task 6, correct plan's unused PromptId import
+741c010  feat(engine): state types, amount evaluator and target resolution   <- Task 6
+134f2ce  docs: ledger task 5, correct plan's webp step to lossless
+35abc38  feat(data): board 1 squares as declarative effects, fixing 4 bugs   <- Task 5
+c0a6d3a  docs: ledger task 4 complete, resume point now task 5
+094f02a  feat(data): extract board 1 coordinates from legacy leaflet latlng  <- Task 4
+8bb2c47  docs: ledger task 3 complete, resume point now task 4
+9f1b347  feat(data): effect/square types and starter roster                  <- Task 3
+65094a3  docs: ledger task 2 complete, resume point now task 3
+93f95cf  feat(engine): seeded deterministic rng                              <- Task 2
+b1f654e  docs: add execution progress record for the react rewrite
+```
+
+Green at handoff: **40 tests across 7 files**, `tsc -b` clean, `npm run build`
+succeeds. What exists so far is `src/engine/{rng,types,amount,targets}.ts` and
+`src/data/{types,starters}.ts` + `src/data/boards/{original.ts,original.coords.json}`.
+No React beyond the Task 1 scaffold — the app still renders the smoke-test shell,
+which is expected until Task 19.
 
 Per task: `scripts/task-brief PLAN N` → dispatch implementer → record BASE before
 dispatching → `scripts/review-package PLAN BASE HEAD` → dispatch task reviewer →
