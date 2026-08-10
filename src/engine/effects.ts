@@ -1,6 +1,7 @@
-import type { Effect } from '../data/types';
-import { BOARD_ORIGINAL } from '../data/boards/original';
+import type { BranchCond, Effect } from '../data/types';
+import { BOARD_ORIGINAL, getSquare } from '../data/boards/original';
 import { resolveAmount } from './amount';
+import { nextInt, rollDie } from './rng';
 import { activePlayer, pushLog, resolveTarget, updatePlayer } from './targets';
 import type { GameState, PlayerId, ResolveCtx } from './types';
 
@@ -48,10 +49,13 @@ function clampSquare(square: number): number {
   return Math.min(LAST_SQUARE, Math.max(0, square));
 }
 
+export function matchesCond(face: number, cond: BranchCond): boolean {
+  return 'faces' in cond ? cond.faces.includes(face) : (face % 2 === 0) === (cond.parity === 'even');
+}
+
 /**
- * Apply exactly one effect. Effects that need randomness (Task 8) or player
- * input (Task 9) extend this switch. An effect may park the phase — `drainQueue`
- * checks for that and stops.
+ * Apply exactly one effect. Effects that need player input (Task 9) extend this
+ * switch. An effect may park the phase — `drainQueue` checks for that and stops.
  */
 export function applyEffect(state: GameState, effect: Effect): GameState {
   switch (effect.kind) {
@@ -114,8 +118,81 @@ export function applyEffect(state: GameState, effect: Effect): GameState {
     case 'note':
       return { ...state, phase: { name: 'note', text: effect.text } };
 
+    case 'roll': {
+      const [face, seed] = rollDie(state.seed);
+      const next = { ...state, seed, lastRoll: face, vars: { ...state.vars, [effect.as]: face } };
+      return pushLog(next, 'roll', `${activePlayer(state).name} rolled ${face}`);
+    }
+
+    case 'rollBranch': {
+      const [face, seed] = rollDie(state.seed);
+      const branch = effect.branches.find((b) => matchesCond(face, b.when));
+      if (!branch) throw new Error(`Rolled ${face} but no branch matched`);
+      const vars = effect.as ? { ...state.vars, [effect.as]: face } : state.vars;
+      const next = {
+        ...state,
+        seed,
+        lastRoll: face,
+        vars,
+        queue: [...branch.effects, ...state.queue],
+      };
+      return pushLog(next, 'roll', `${activePlayer(state).name} rolled ${face}`);
+    }
+
+    case 'rollWhile': {
+      let seed = state.seed;
+      let count = 0;
+      let face = 0;
+      while (count < effect.max) {
+        [face, seed] = rollDie(seed);
+        if (!matchesCond(face, effect.continueWhen)) break;
+        count += 1;
+      }
+      const next = { ...state, seed, lastRoll: face, vars: { ...state.vars, [effect.as]: count } };
+      return pushLog(next, 'roll', `${activePlayer(state).name} kept rolling — ${count} in a row`);
+    }
+
+    case 'rollTimes': {
+      let seed = state.seed;
+      let succeeded = false;
+      const faces: number[] = [];
+      for (let i = 0; i < effect.times; i++) {
+        const [face, nextSeed] = rollDie(seed);
+        seed = nextSeed;
+        faces.push(face);
+        if (effect.succeedOn.includes(face)) succeeded = true;
+      }
+      const chosen = succeeded ? effect.onSuccess : effect.onFail;
+      const next = {
+        ...state,
+        seed,
+        lastRoll: faces.at(-1) ?? state.lastRoll,
+        queue: [...chosen, ...state.queue],
+      };
+      return pushLog(next, 'roll', `${activePlayer(state).name} rolled ${faces.join(', ')}`);
+    }
+
+    case 'randomSquare': {
+      const [index, seed] = nextInt(state.seed, BOARD_ORIGINAL.squares.length);
+      const square = getSquare(BOARD_ORIGINAL, index);
+      // Metronome copies another square. Squares with no mechanical effect
+      // (pure flavour or Start) fall back to the legacy "just drink 2" rule.
+      const copied =
+        square.effects.length > 0
+          ? square.effects
+          : ([{ kind: 'drink', target: 'self', amount: { kind: 'fixed', value: 2 } }] as const);
+      const next = { ...state, seed, queue: [...copied, ...state.queue] };
+      return pushLog(next, 'info', `Metronome copied square ${index}: ${square.text}`);
+    }
+
+    case 'ifAnyPlayerHasStatus': {
+      const held = state.players.some((p) => p.statuses.some((s) => s.id === effect.status));
+      const chosen = held ? effect.then : effect.otherwise;
+      return { ...state, queue: [...chosen, ...state.queue] };
+    }
+
     default:
-      // Randomness (Task 8) and prompt (Task 9) effects land here until implemented.
+      // Prompt effects (Task 9) land here until implemented.
       throw new Error(`Unhandled effect kind: ${(effect as { kind: string }).kind}`);
   }
 }
