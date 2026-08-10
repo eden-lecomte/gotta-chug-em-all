@@ -2077,7 +2077,8 @@ Create `src/engine/__tests__/effects.random.test.ts`:
 import { describe, it, expect } from 'vitest';
 import { applyEffect, drainQueue, matchesCond } from '../effects';
 import { makePlayer, makeState } from './factories';
-import { rollDie } from '../rng';
+import { nextInt, rollDie } from '../rng';
+import { BOARD_ORIGINAL } from '../../data/boards/original';
 
 /** Find a seed whose next die roll is exactly `face`. */
 function seedFor(face: number): number {
@@ -2085,6 +2086,15 @@ function seedFor(face: number): number {
     if (rollDie(seed)[0] === face) return seed;
   }
   throw new Error(`No seed produced face ${face}`);
+}
+
+/** Find a seed whose next Metronome pick is exactly `index`. */
+function seedForSquare(index: number): number {
+  const size = BOARD_ORIGINAL.squares.length;
+  for (let seed = 1; seed < 100_000; seed++) {
+    if (nextInt(seed, size)[0] === index) return seed;
+  }
+  throw new Error(`No seed produced square ${index}`);
 }
 
 describe('matchesCond', () => {
@@ -2164,6 +2174,26 @@ describe('rollWhile effect (Cinnabar Gym)', () => {
     expect(next.vars.evens).toBe(0);
   });
 
+  it('counts exactly the evens rolled before the first odd', () => {
+    // Independently replay the seed stream: the bound count must equal the
+    // number of even faces before the first odd one, with no off-by-one.
+    for (let seed = 1; seed < 500; seed++) {
+      let s = seed;
+      let expected = 0;
+      for (;;) {
+        const [face, next] = rollDie(s);
+        s = next;
+        if (face % 2 !== 0) break;
+        expected += 1;
+      }
+      const out = applyEffect(makeState({ seed }), {
+        kind: 'rollWhile', continueWhen: { parity: 'even' }, as: 'evens', max: 20,
+      });
+      expect(out.vars.evens).toBe(expected);
+      expect(out.seed).toBe(s);
+    }
+  });
+
   it('never exceeds max', () => {
     let state = makeState({ seed: 1 });
     for (let i = 0; i < 200; i++) {
@@ -2202,15 +2232,19 @@ describe('randomSquare effect (Clefairy)', () => {
     expect(next.log.at(-1)!.text).toMatch(/Metronome/i);
   });
 
+  it('copies the chosen square’s effects verbatim', () => {
+    // Square 52 (Fuchsia Gym) is a plain "drink 3", so the copy is unambiguous.
+    const next = applyEffect(makeState({ seed: seedForSquare(52) }), { kind: 'randomSquare' });
+    expect(next.queue).toEqual(BOARD_ORIGINAL.squares[52].effects);
+  });
+
   it('falls back to drinking 2 when the chosen square has no effects', () => {
-    // Square 0 (Start) has no effects; force it by exhausting other options is
-    // impractical, so assert the fallback exists in the queue or drinks applied.
-    let sawFallback = false;
-    for (let seed = 1; seed < 400 && !sawFallback; seed++) {
-      const next = applyEffect(makeState({ seed }), { kind: 'randomSquare' });
-      if (JSON.stringify(next.queue).includes('"value":2')) sawFallback = true;
-    }
-    expect(sawFallback).toBe(true);
+    // Square 0 (Start) is the only effect-less square, so pin the seed to it
+    // rather than scanning for any queue that happens to contain a 2.
+    const start = BOARD_ORIGINAL.squares[0];
+    expect(start.effects).toHaveLength(0);
+    const next = applyEffect(makeState({ seed: seedForSquare(0) }), { kind: 'randomSquare' });
+    expect(next.queue).toEqual([{ kind: 'drink', target: 'self', amount: { kind: 'fixed', value: 2 } }]);
   });
 });
 
@@ -2341,7 +2375,7 @@ Then replace the `default:` clause of the `applyEffect` switch with these cases,
 - [ ] **Step 4: Run the test to verify it passes**
 
 Run: `npx vitest run src/engine/__tests__/effects.random.test.ts`
-Expected: PASS, 14 tests.
+Expected: PASS, 17 tests.
 
 - [ ] **Step 5: Run the whole suite to check nothing regressed**
 

@@ -25,8 +25,9 @@ the SDD method" below).
 | 5. Board 1 square data | ✅ complete (1 deviation), reviewed | `35abc38` |
 | 6. Engine state types and value resolution | ✅ complete (1 deviation), reviewed | `741c010` |
 | 7. Effect interpreter — deterministic effects | ✅ complete | `36af968` |
-| 8. Effect interpreter — random effects | ⬜ next | — |
-| 9-26 | ⬜ pending | — |
+| 8. Effect interpreter — random effects | ✅ complete (1 deviation) | `6afd9c0` |
+| 9. Effect interpreter — prompts and player input | ⬜ next | — |
+| 10-26 | ⬜ pending | — |
 
 ### Task 1 — what landed
 
@@ -238,6 +239,39 @@ ifAnyPlayerHasStatus 1   moveBy 0
 `moveBy` is at zero because no square uses it directly — it exists for Task 8's
 `randomSquare` and the turn machine. Do not prune it as dead code.
 
+### Task 8 — what landed
+
+- `src/engine/effects.ts` extended with `roll`, `rollBranch`, `rollWhile`,
+  `rollTimes`, `randomSquare` and `ifAnyPlayerHasStatus`, plus the exported
+  `matchesCond`, and `src/engine/__tests__/effects.random.test.ts`. The plan's
+  **implementation** code was correct as written — in particular the `rollWhile`
+  loop the plan flagged as off-by-one-prone is right. Full suite 74/74,
+  `tsc -b` clean, `npm run build` succeeds, engine still DOM-free.
+- **Deviation 1: two of the plan's tests were strengthened, not weakened.** The
+  plan's `randomSquare` fallback test scanned 400 seeds for any queue whose JSON
+  contained `"value":2` — but squares 4, 13, 50 and 51 all carry a literal 2, so
+  the test passed on real square data and **never exercised the fallback at
+  all**. It now pins the seed to square 0 (the board's only effect-less square)
+  via a new `seedForSquare` helper and asserts the queue exactly. A second test
+  pins a Metronome copy of square 52 verbatim, and a third replays the seed
+  stream independently to assert `rollWhile`'s count *and* resulting seed. Both
+  the plan's test listing and its predicted count (14 → 17) are corrected in
+  place; the plan block and the repo file are byte-identical again.
+
+Audit run before committing, worth repeating in Task 9:
+
+- **Every `rollBranch` on the board covers all six faces.** A gap would throw
+  `no branch matched` mid-game the first time that face came up, and no test
+  would have caught it — the plan only tests an artificial empty-branch case.
+- **Metronome terminates.** Over 3,000 seeds it picked all 63 squares, including
+  itself 59 times and the two Abra teleports 94 times; worst-case drain was 7
+  steps. The self-reference is bounded in practice, so it needs no guard, but
+  **copying square 11/28 physically teleports the player** — the legacy text
+  says "drink or give what it says", so this is a rule widening someone may want
+  to narrow.
+- **Determinism holds**: 14 squares containing random effects, replayed twice
+  from each of 200 seeds, produced byte-identical states — 0 mismatches.
+
 ---
 
 ## Plan corrections made during execution
@@ -401,10 +435,9 @@ rather than silently changed.
    otherwise execute directly, keeping the TDD steps and per-task commits.
 3. Run its `scripts/sdd-workspace` on the plan path to recreate the workspace,
    then seed a fresh ledger from the Status table above. **Do not re-dispatch
-   Tasks 1-7** — all are committed and merged to `2026-rewrite`.
-4. Resume at **Task 8 (Effect interpreter — random effects), BASE `36af968`**.
-   Read finding 2 in "Review of Tasks 5 and 6" before starting: Task 8 owns the
-   unresolved `randomSquare` semantics.
+   Tasks 1-8** — all are committed on `2026-rewrite`.
+4. Resume at **Task 9 (Effect interpreter — prompts and player input), BASE
+   `6afd9c0`**.
 
 Task 5's board data is now the substrate for Tasks 6-13. Two audit scripts from
 the notes above are worth re-running whenever engine or board data changes: the
@@ -420,12 +453,14 @@ than at the end of the task.
 
 ### State at handoff
 
-Tasks 1-7 complete, and Tasks 5-6 reviewed. Local `2026-rewrite` is ahead of
+Tasks 1-8 complete, and Tasks 5-6 reviewed. Local `2026-rewrite` is ahead of
 both pushed branches — **the commits below from `ec543f9` onward are unpushed**
 (this machine's SSH key is not usable from the agent sandbox; fetch and push
 over HTTPS with the `gh` credential helper instead).
 
 ```text
+6afd9c0  feat(engine): seeded random effects — branches, repeats, metronome  <- Task 8
+a8d0adb  docs: ledger task 7 complete, resume point now task 8
 36af968  feat(engine): deterministic effect interpreter and queue drain      <- Task 7
 ec543f9  docs: review tasks 5 and 6, log three text-vs-effect mismatches
 d373c73  docs: ledger task 6, correct plan's unused PromptId import
@@ -441,7 +476,7 @@ c0a6d3a  docs: ledger task 4 complete, resume point now task 5
 b1f654e  docs: add execution progress record for the react rewrite
 ```
 
-Green at handoff: **57 tests across 8 files**, `tsc -b` clean, `npm run build`
+Green at handoff: **74 tests across 9 files**, `tsc -b` clean, `npm run build`
 succeeds. What exists so far is `src/engine/{rng,types,amount,targets,effects}.ts`
 and `src/data/{types,starters}.ts` +
 `src/data/boards/{original.ts,original.coords.json}`.
