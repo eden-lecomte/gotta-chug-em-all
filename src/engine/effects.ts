@@ -3,7 +3,7 @@ import { BOARD_ORIGINAL, getSquare } from '../data/boards/original';
 import { resolveAmount } from './amount';
 import { nextInt, rollDie } from './rng';
 import { activePlayer, pushLog, resolveTarget, updatePlayer } from './targets';
-import type { GameState, PlayerId, ResolveCtx } from './types';
+import type { GameState, PlayerId, Prompt, ResolveCtx } from './types';
 
 const LAST_SQUARE = BOARD_ORIGINAL.squares.length - 1;
 
@@ -95,7 +95,15 @@ export function applyEffect(state: GameState, effect: Effect): GameState {
     }
 
     case 'applyStatus': {
-      if (effect.target === 'chosen') return state; // handled in Task 9
+      if (effect.target === 'chosen') {
+        return {
+          ...state,
+          phase: {
+            name: 'prompt',
+            prompt: { id: 'choosePlayer', purpose: 'status', status: effect.status, expires: effect.expires },
+          },
+        };
+      }
       const ids = resolveTarget(effect.target, state);
       const square = activePlayer(state).square;
       return ids.reduce((acc, id) => {
@@ -191,8 +199,24 @@ export function applyEffect(state: GameState, effect: Effect): GameState {
       return { ...state, queue: [...chosen, ...state.queue] };
     }
 
+    case 'give': {
+      const drinks = resolveAmount(effect.amount, ctxOf(state));
+      const players =
+        effect.players === 'all' ? ('all' as const) : resolveAmount(effect.players, ctxOf(state));
+      if (drinks <= 0 || players === 0) return state;
+      return { ...state, phase: { name: 'prompt', prompt: { id: 'givePlayers', drinks, players } } };
+    }
+
+    case 'movePlayerBy':
+      return {
+        ...state,
+        phase: { name: 'prompt', prompt: { id: 'choosePlayer', purpose: 'move', squares: effect.squares } },
+      };
+
+    case 'prompt':
+      return { ...state, phase: { name: 'prompt', prompt: { id: effect.prompt } as Prompt } };
+
     default:
-      // Prompt effects (Task 9) land here until implemented.
       throw new Error(`Unhandled effect kind: ${(effect as { kind: string }).kind}`);
   }
 }
