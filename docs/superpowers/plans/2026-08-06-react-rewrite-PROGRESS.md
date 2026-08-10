@@ -26,8 +26,9 @@ the SDD method" below).
 | 6. Engine state types and value resolution | ✅ complete (1 deviation), reviewed | `741c010` |
 | 7. Effect interpreter — deterministic effects | ✅ complete | `36af968` |
 | 8. Effect interpreter — random effects | ✅ complete (1 deviation) | `6afd9c0` |
-| 9. Effect interpreter — prompts and player input | ⬜ next | — |
-| 10-26 | ⬜ pending | — |
+| 9. Effect interpreter — prompts and player input | ✅ complete (1 deviation) | `48dbf7d` |
+| 10. Status lifecycle | ⬜ next | — |
+| 11-26 | ⬜ pending | — |
 
 ### Task 1 — what landed
 
@@ -272,6 +273,49 @@ Audit run before committing, worth repeating in Task 9:
 - **Determinism holds**: 14 squares containing random effects, replayed twice
   from each of 200 seeds, produced byte-identical states — 0 mismatches.
 
+### Task 9 — what landed
+
+- `src/engine/prompts.ts` and `src/engine/__tests__/prompts.test.ts`, plus the
+  four parking cases in `applyEffect` (`give`, `movePlayerBy`, `prompt`, and
+  `applyStatus` with `target: 'chosen'`). Full suite 88/88, `tsc -b` clean,
+  `npm run build` succeeds, engine still DOM-free.
+- **Deviation 1: two of the plan's tests were wrong and were fixed.** The
+  Snorlax and Koffing cases asserted the refusal penalty straight off
+  `resolvePrompt`, but `resolvePrompt` only *queues* it — `drainQueue` applies
+  it. The sibling Evolution, Saffron and Pokeball cases already wrapped their
+  calls; these two now do too. This is the plan's third substantive error and
+  the first one its own tests caught. Plan corrected in place, predicted count
+  13 → 14, and the plan block is byte-identical to the repo file again.
+
+Audit run before committing — **this is a dry run of Task 13's integration
+test and the strongest evidence so far that the engine is coherent**: every one
+of the 63 squares was drained from 60 different seeds (3,780 plays), with every
+prompt auto-answered and every note acked, until the phase reached `turnEnd`.
+
+- **No throws, no unexpected phases, nothing stalled.** Worst case was a single
+  park/resume cycle per square.
+- All eight prompt kinds were exercised: `givePlayers` 507, `choosePlayer` 123,
+  `evolution` 62, `saffronNumber` 61, `snorlaxSong` 61, and 60 each of
+  `chuggingContest`, `koffingSmoke`, `pokeballCatch`.
+
+### Open finding from Task 9: Pokéball loses half its rule
+
+Square 61's action reads "If your favorite Pokemon is on the board, roll a 1-3
+to catch it! Roll a 4-6 and it got away, drink 3. If your favorite is not on the
+board, sadly drink 3." The plan implements `onBoard ? [] : [drink(3)]` — so
+answering **yes costs nothing and never rolls**. The plan's test only covers the
+`onBoard: false` path, so nothing flags it. This is the same class as the three
+findings in the Task 5/6 review: the screen promises a roll that the engine does
+not make. Fixing it means rolling in the `pokeballCatch` branch of
+`resolvePrompt` and queueing `drink(3)` on a 4-6.
+
+Two smaller ones in `src/engine/prompts.ts`, neither urgent:
+
+- The Haunter move clamps with a hardcoded `Math.min(62, …)` rather than the
+  board's last square; `effects.ts` already derives `LAST_SQUARE` properly.
+- `chuggingContest` does not check that `winnerId` is either the active player
+  or the named opponent, so a malformed result can hand a third player a turn.
+
 ---
 
 ## Plan corrections made during execution
@@ -435,9 +479,10 @@ rather than silently changed.
    otherwise execute directly, keeping the TDD steps and per-task commits.
 3. Run its `scripts/sdd-workspace` on the plan path to recreate the workspace,
    then seed a fresh ledger from the Status table above. **Do not re-dispatch
-   Tasks 1-8** — all are committed on `2026-rewrite`.
-4. Resume at **Task 9 (Effect interpreter — prompts and player input), BASE
-   `6afd9c0`**.
+   Tasks 1-9** — all are committed on `2026-rewrite`.
+4. Resume at **Task 10 (Status lifecycle), BASE `48dbf7d`**. Read finding 3 in
+   "Review of Tasks 5 and 6" first: Task 10 owns the `confuseRay` expiry
+   contradiction.
 
 Task 5's board data is now the substrate for Tasks 6-13. Two audit scripts from
 the notes above are worth re-running whenever engine or board data changes: the
@@ -453,12 +498,14 @@ than at the end of the task.
 
 ### State at handoff
 
-Tasks 1-8 complete, and Tasks 5-6 reviewed. Local `2026-rewrite` is ahead of
+Tasks 1-9 complete, and Tasks 5-6 reviewed. Local `2026-rewrite` is ahead of
 both pushed branches — **the commits below from `ec543f9` onward are unpushed**
 (this machine's SSH key is not usable from the agent sandbox; fetch and push
 over HTTPS with the `gh` credential helper instead).
 
 ```text
+48dbf7d  feat(engine): prompt-parking effects and prompt resolution          <- Task 9
+dc58766  docs: ledger task 8, fix the plan's false-positive metronome test
 6afd9c0  feat(engine): seeded random effects — branches, repeats, metronome  <- Task 8
 a8d0adb  docs: ledger task 7 complete, resume point now task 8
 36af968  feat(engine): deterministic effect interpreter and queue drain      <- Task 7
@@ -476,8 +523,9 @@ c0a6d3a  docs: ledger task 4 complete, resume point now task 5
 b1f654e  docs: add execution progress record for the react rewrite
 ```
 
-Green at handoff: **74 tests across 9 files**, `tsc -b` clean, `npm run build`
-succeeds. What exists so far is `src/engine/{rng,types,amount,targets,effects}.ts`
+Green at handoff: **88 tests across 10 files**, `tsc -b` clean, `npm run build`
+succeeds. What exists so far is
+`src/engine/{rng,types,amount,targets,effects,prompts}.ts`
 and `src/data/{types,starters}.ts` +
 `src/data/boards/{original.ts,original.coords.json}`.
 No React beyond the Task 1 scaffold — the app still renders the smoke-test shell,

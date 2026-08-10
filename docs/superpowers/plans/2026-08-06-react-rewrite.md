@@ -2487,15 +2487,16 @@ describe('applyStatus to a chosen player (Lapras)', () => {
 
 describe('question prompts', () => {
   it('Snorlax: singing costs nothing, refusing costs 4', () => {
+    // resolvePrompt only queues the penalty; drainQueue is what applies it.
     const parked = applyEffect(makeState(), { kind: 'prompt', prompt: 'snorlaxSong' });
-    expect(resolvePrompt(parked, { id: 'snorlaxSong', sang: true }).players[0].drinks).toBe(0);
-    expect(resolvePrompt(parked, { id: 'snorlaxSong', sang: false }).players[0].drinks).toBe(4);
+    expect(drainQueue(resolvePrompt(parked, { id: 'snorlaxSong', sang: true })).players[0].drinks).toBe(0);
+    expect(drainQueue(resolvePrompt(parked, { id: 'snorlaxSong', sang: false })).players[0].drinks).toBe(4);
   });
 
   it('Koffing: smoking costs nothing, refusing costs 2', () => {
     const parked = applyEffect(makeState(), { kind: 'prompt', prompt: 'koffingSmoke' });
-    expect(resolvePrompt(parked, { id: 'koffingSmoke', smoked: true }).players[0].drinks).toBe(0);
-    expect(resolvePrompt(parked, { id: 'koffingSmoke', smoked: false }).players[0].drinks).toBe(2);
+    expect(drainQueue(resolvePrompt(parked, { id: 'koffingSmoke', smoked: true })).players[0].drinks).toBe(0);
+    expect(drainQueue(resolvePrompt(parked, { id: 'koffingSmoke', smoked: false })).players[0].drinks).toBe(2);
   });
 
   it('Evolution: evolving costs 4 and skips the next gym; stopping grants a turn', () => {
@@ -2694,7 +2695,7 @@ export function resolvePrompt(state: GameState, result: PromptResult): GameState
 - [ ] **Step 5: Run the test to verify it passes**
 
 Run: `npx vitest run src/engine/__tests__/prompts.test.ts`
-Expected: PASS, 13 tests.
+Expected: PASS, 14 tests.
 
 - [ ] **Step 6: Commit**
 
