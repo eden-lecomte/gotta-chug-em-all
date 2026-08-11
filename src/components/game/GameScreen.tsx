@@ -1,6 +1,7 @@
 import BoardView from '../board/BoardView';
 import ControlSheet from './ControlSheet';
 import DiceRoller from './DiceRoller';
+import SquareModal from './SquareModal';
 import { activePlayer } from '../../engine/selectors';
 import { useGameStore } from '../../store/gameStore';
 import { useTurnDriver } from './useTurnDriver';
@@ -32,6 +33,7 @@ export default function GameScreen() {
 
       <ControlSheet />
       <DiceRoller />
+      <SquareModal />
     </div>
   );
 }
