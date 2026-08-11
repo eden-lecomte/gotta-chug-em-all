@@ -102,7 +102,12 @@ export function reduce(state: GameState, action: Action): GameState {
 
       if (active.square === LAST_SQUARE) {
         const finished = updatePlayer(state, active.id, (p) => ({ ...p, finishedAtTurn: state.turnNumber }));
-        return pushLog(finished, 'info', `${active.name} finished the board!`);
+        // Must leave `landed`, or a driver that dispatches on phase re-finishes
+        // this player forever. END_TURN is what actually ends the game.
+        return {
+          ...pushLog(finished, 'info', `${active.name} finished the board!`),
+          phase: { name: 'turnEnd' },
+        };
       }
 
       const square = getSquare(BOARD_ORIGINAL, active.square);
