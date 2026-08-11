@@ -74,8 +74,26 @@ export function reduce(state: GameState, action: Action): GameState {
       if (state.phase.name !== 'moving') return state;
       const { state: moved, stop } = stepOnce(state);
       const remaining = state.phase.remaining - 1;
-      const done = stop || remaining <= 0 || activePlayer(moved).square === LAST_SQUARE;
-      return { ...moved, phase: done ? { name: 'landed' } : { name: 'moving', remaining } };
+      const active = activePlayer(moved);
+      const done = stop || remaining <= 0 || active.square === LAST_SQUARE;
+      if (!done) return { ...moved, phase: { name: 'moving', remaining } };
+
+      const opponent = moved.players.find(
+        (p) => p.id !== active.id && p.square === active.square && p.finishedAtTurn === null,
+      );
+      // Start is where everyone begins, so it is never contested.
+      if (moved.config.trainerBattles && opponent && active.square !== 0) {
+        const [mine, afterMine] = rollDie(moved.seed);
+        const [theirs, afterTheirs] = rollDie(afterMine);
+        const withRolls = pushLog(
+          { ...moved, seed: afterTheirs },
+          'info',
+          `Trainer battle! ${active.name} rolled ${mine}, ${opponent.name} rolled ${theirs}`,
+        );
+        return { ...withRolls, phase: { name: 'battle', opponentId: opponent.id, rolls: [mine, theirs] } };
+      }
+
+      return { ...moved, phase: { name: 'landed' } };
     }
 
     case 'DISMISS_SQUARE': {
@@ -103,7 +121,20 @@ export function reduce(state: GameState, action: Action): GameState {
 
     case 'ACK_BATTLE': {
       if (state.phase.name !== 'battle') return state;
-      return drainQueue({ ...state, phase: { name: 'resolving' } });
+      const { opponentId, rolls } = state.phase;
+      const [mine, theirs] = rolls;
+      const active = activePlayer(state);
+      const diff = Math.abs(mine - theirs);
+
+      let next = state;
+      if (diff > 0) {
+        const loserId = mine > theirs ? opponentId : active.id;
+        next = giveDrinks(next, loserId, diff, null);
+      }
+      // The square's own rule still applies, so fall through to the normal
+      // landed flow rather than resolving here — the player still needs to see
+      // the square card.
+      return { ...next, phase: { name: 'landed' } };
     }
 
     case 'RESOLVE_PROMPT': {
