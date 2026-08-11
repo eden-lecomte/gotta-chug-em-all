@@ -1,11 +1,15 @@
 // @vitest-environment jsdom
 import { render, screen } from '@testing-library/react';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import App from './App';
+import { useGameStore } from './store/gameStore';
 
 describe('App', () => {
-  it('renders the game title', () => {
+  beforeEach(() => useGameStore.getState().reset());
+
+  it('shows the lobby when no game is running', () => {
     render(<App />);
-    expect(screen.getByText(/Gotta Chug/i)).toBeInTheDocument();
+    expect(screen.getByText(/Gotta Chug 'em All/i)).toBeInTheDocument();
+    expect(screen.getByPlaceholderText(/enter a name/i)).toBeInTheDocument();
   });
 });
