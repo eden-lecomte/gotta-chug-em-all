@@ -1,0 +1,24 @@
+services:
+  gotta-chug-em-all:
+    build:
+      context: .
+      # Serving from a subpath instead of its own port or hostname? Set
+      # BASE_PATH here (with both slashes, e.g. /chug/) and rebuild.
+      args:
+        BASE_PATH: ""
+    image: gotta-chug-em-all:latest
+    container_name: gotta-chug-em-all
+    restart: unless-stopped
+    ports:
+      # Host 842 is arbitrary — change the left side if it clashes with another
+      # Unraid container. The right side is nginx and stays 80.
+      - "842:80"
+    # Nothing is written at runtime: the bundle is baked into the image and the
+    # game keeps its state in the browser. No appdata share needed.
+    read_only: true
+    tmpfs:
+      - /var/cache/nginx
+      - /var/run
+    labels:
+      net.unraid.docker.icon: "https://raw.githubusercontent.com/zednx/gotta-chug-em-all/master/public/icon-192.png"
+      net.unraid.docker.webui: "http://[IP]:[PORT:80]"

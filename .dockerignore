@@ -1,0 +1,15 @@
+# The build only needs src/, public/ and the config at the root. Everything here
+# is either rebuilt inside the image or has no business in the context at all —
+# assets/ alone is 60 MB of source art the bundle never touches.
+node_modules
+dist
+assets
+docs
+.git
+.superpowers
+*.tsbuildinfo
+
+# The image builds its own; shipping one in would just invalidate the cache.
+Dockerfile
+docker-compose.yml
+.dockerignore
