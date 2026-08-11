@@ -41,6 +41,7 @@ export type StatusExpiry =
   | 'nextTurnStart'   // cleared at the start of the holder's next turn
   | 'afterNextTurn'   // survives one full turn, cleared at its end
   | 'leaveSquare'     // cleared when the holder moves off the square
+  | 'rollToClear'     // survives until the holder rolls one of STATUS_META.clearsOn
   | 'endOfGame';      // never cleared
 
 export type PromptId =

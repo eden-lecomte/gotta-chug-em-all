@@ -200,7 +200,8 @@ const RULES: Record<number, { kind?: SquareKind; effects: Effect[] }> = {
 
   37: { kind: 'silverZone', effects: [{ kind: 'drink', target: 'self', amount: { kind: 'perPlayer' } }] },
 
-  38: { kind: 'silverZone', effects: [{ kind: 'applyStatus', target: 'chosen', status: 'confuseRay', expires: 'afterNextTurn' }] },
+  // Lapras: the chosen player stays confused until they roll a 1-3, per the text.
+  38: { kind: 'silverZone', effects: [{ kind: 'applyStatus', target: 'chosen', status: 'confuseRay', expires: 'rollToClear' }] },
 
   // Team Rocket. Legacy overwrote every player's tally.
   39: { kind: 'silverZone', effects: [{ kind: 'drink', target: 'everyone', amount: n(1) }] },
