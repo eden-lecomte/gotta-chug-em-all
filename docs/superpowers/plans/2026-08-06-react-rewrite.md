@@ -518,6 +518,7 @@ export type StatusExpiry =
   | 'nextTurnStart'   // cleared at the start of the holder's next turn
   | 'afterNextTurn'   // survives one full turn, cleared at its end
   | 'leaveSquare'     // cleared when the holder moves off the square
+  | 'rollToClear'     // survives until the holder rolls one of STATUS_META.clearsOn
   | 'endOfGame';      // never cleared
 
 export type PromptId =
@@ -1103,7 +1104,8 @@ const RULES: Record<number, { kind?: SquareKind; effects: Effect[] }> = {
 
   37: { kind: 'silverZone', effects: [{ kind: 'drink', target: 'self', amount: { kind: 'perPlayer' } }] },
 
-  38: { kind: 'silverZone', effects: [{ kind: 'applyStatus', target: 'chosen', status: 'confuseRay', expires: 'afterNextTurn' }] },
+  // Lapras: the chosen player stays confused until they roll a 1-3, per the text.
+  38: { kind: 'silverZone', effects: [{ kind: 'applyStatus', target: 'chosen', status: 'confuseRay', expires: 'rollToClear' }] },
 
   // Team Rocket. Legacy overwrote every player's tally.
   39: { kind: 'silverZone', effects: [{ kind: 'drink', target: 'everyone', amount: n(1) }] },
@@ -2850,11 +2852,12 @@ Create `src/engine/__tests__/statuses.test.ts`:
 ```ts
 import { describe, it, expect } from 'vitest';
 import {
-  STATUS_META, clearOnLeaveSquare, clearStatus, expireAfterTurn,
-  hasStatus, movementFor, turnStartEffects,
+  STATUS_META, clearByRoll, clearOnLeaveSquare, clearStatus, expireAfterTurn,
+  hasStatus, movementFor, rollToClearStatuses, turnStartEffects,
 } from '../statuses';
 import { makePlayer, makeState } from './factories';
 import type { Status } from '../types';
+import { BOARD_ORIGINAL, getSquare } from '../../data/boards/original';
 
 const status = (id: Status['id'], expires: Status['expires'], square = 0): Status =>
   ({ id, expires, appliedOnSquare: square });
@@ -2928,6 +2931,11 @@ describe('expireAfterTurn', () => {
     const state = makeState({ players: [makePlayer('a', { statuses: [status('reflect', 'leaveSquare')] })] });
     expect(expireAfterTurn(state, 'a').players[0].statuses).toHaveLength(1);
   });
+
+  it('leaves rollToClear statuses alone — only a roll clears those', () => {
+    const state = makeState({ players: [makePlayer('a', { statuses: [status('confuseRay', 'rollToClear')] })] });
+    expect(expireAfterTurn(state, 'a').players[0].statuses).toHaveLength(1);
+  });
 });
 
 describe('clearStatus and hasStatus', () => {
@@ -2938,6 +2946,38 @@ describe('clearStatus and hasStatus', () => {
     const next = clearStatus(state, 'a', 'zubats');
     expect(hasStatus(next.players[0], 'zubats')).toBe(false);
     expect(hasStatus(next.players[0], 'reflect')).toBe(true);
+  });
+});
+
+describe('rollToClear statuses (Lapras Confuse Ray)', () => {
+  const confused = makeState({
+    players: [makePlayer('a', { statuses: [status('confuseRay', 'rollToClear', 38)] })],
+  });
+
+  it('lists the statuses that need a roll to shake off', () => {
+    expect(rollToClearStatuses(confused.players[0]).map((s) => s.id)).toEqual(['confuseRay']);
+    expect(rollToClearStatuses(makePlayer('b'))).toEqual([]);
+  });
+
+  it('clears Confuse Ray on a 1-3 and keeps it on a 4-6', () => {
+    for (const roll of [1, 2, 3]) {
+      expect(hasStatus(clearByRoll(confused, 'a', roll).players[0], 'confuseRay')).toBe(false);
+    }
+    for (const roll of [4, 5, 6]) {
+      expect(hasStatus(clearByRoll(confused, 'a', roll).players[0], 'confuseRay')).toBe(true);
+    }
+  });
+
+  it('leaves statuses that expire some other way untouched', () => {
+    const state = makeState({ players: [makePlayer('a', { statuses: [status('doubleMove', 'afterNextTurn')] })] });
+    expect(clearByRoll(state, 'a', 1).players[0].statuses).toHaveLength(1);
+  });
+
+  it('is how square 38 applies Confuse Ray', () => {
+    expect(getSquare(BOARD_ORIGINAL, 38).effects).toEqual([
+      { kind: 'applyStatus', target: 'chosen', status: 'confuseRay', expires: 'rollToClear' },
+    ]);
+    expect(STATUS_META.confuseRay.clearsOn).toEqual([1, 2, 3]);
   });
 });
 
@@ -2974,11 +3014,23 @@ Create `src/engine/statuses.ts`:
 ```ts
 import type { Effect, StatusId } from '../data/types';
 import { updatePlayer } from './targets';
-import type { GameState, Player, PlayerId } from './types';
+import type { GameState, Player, PlayerId, Status } from './types';
 
-export const STATUS_META: Record<StatusId, { label: string; blurb: string }> = {
+/**
+ * `clearsOn` lists the die faces that shake a `rollToClear` status off. It is
+ * only meaningful for statuses the board applies with that expiry.
+ */
+export const STATUS_META: Record<StatusId, {
+  label: string;
+  blurb: string;
+  clearsOn?: readonly number[];
+}> = {
   zubats: { label: 'Confused by Zubats', blurb: 'Roll 3 or more to escape this square.' },
-  confuseRay: { label: 'Confused', blurb: 'Roll 1-3 to snap out of it, or lose the turn.' },
+  confuseRay: {
+    label: 'Confused',
+    blurb: 'Roll 1-3 to snap out of it, or lose the turn.',
+    clearsOn: [1, 2, 3],
+  },
   stringShot: { label: 'String Shot', blurb: 'Your next move is halved, rounded up.' },
   doubleMove: { label: 'On the bicycle', blurb: 'Your next move is doubled.' },
   reflect: { label: 'Tri Attack', blurb: 'Drinks given to you rebound on the giver at 3x.' },
@@ -3030,6 +3082,25 @@ export function expireAfterTurn(state: GameState, playerId: PlayerId): GameState
   }));
 }
 
+/**
+ * Statuses that no clock removes — the holder has to roll them off. The turn
+ * machine rolls once for these before the turn proper, and a holder still
+ * carrying one afterwards loses the turn.
+ */
+export function rollToClearStatuses(player: Player): readonly Status[] {
+  return player.statuses.filter((s) => s.expires === 'rollToClear');
+}
+
+/** Remove every `rollToClear` status whose `clearsOn` contains this face. */
+export function clearByRoll(state: GameState, playerId: PlayerId, roll: number): GameState {
+  return updatePlayer(state, playerId, (p) => ({
+    ...p,
+    statuses: p.statuses.filter(
+      (s) => s.expires !== 'rollToClear' || !(STATUS_META[s.id].clearsOn ?? []).includes(roll),
+    ),
+  }));
+}
+
 /** Upkeep charged before a player rolls, driven by which zone they are standing in. */
 export function turnStartEffects(player: Player): Effect[] {
   const effects: Effect[] = [];
@@ -3068,7 +3139,7 @@ export function turnStartEffects(player: Player): Effect[] {
 - [ ] **Step 4: Run the test to verify it passes**
 
 Run: `npx vitest run src/engine/__tests__/statuses.test.ts`
-Expected: PASS, 13 tests.
+Expected: PASS, 19 tests.
 
 - [ ] **Step 5: Commit**
 

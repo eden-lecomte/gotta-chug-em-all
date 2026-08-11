@@ -9,12 +9,12 @@ jQuery game and must not be merged into until Task 26)
 **Base commit (pre-rewrite):** `2c81ca2`, also tagged **`v0-jquery`**
 **Method as planned:** superpowers:subagent-driven-development — fresh
 implementer subagent per task, task review after each, broad review at the end.
-**Method actually used for Tasks 2-9:** direct execution (see "Deviation from
+**Method actually used for Tasks 2-10:** direct execution (see "Deviation from
 the SDD method" below).
 
 ---
 
-## Status: 9 of 26 tasks complete
+## Status: 10 of 26 tasks complete
 
 | Task | Status | Commits |
 |---|---|---|
@@ -27,8 +27,9 @@ the SDD method" below).
 | 7. Effect interpreter — deterministic effects | ✅ complete | `36af968` |
 | 8. Effect interpreter — random effects | ✅ complete (1 deviation) | `6afd9c0` |
 | 9. Effect interpreter — prompts and player input | ✅ complete (1 deviation) | `48dbf7d` |
-| 10. Status lifecycle | ⬜ next | — |
-| 11-26 | ⬜ pending | — |
+| 10. Status lifecycle | ✅ complete (1 deviation) | `653057f` |
+| 11. Turn machine and reducer | ⬜ next | — |
+| 12-26 | ⬜ pending | — |
 
 ### Task 1 — what landed
 
@@ -298,6 +299,47 @@ prompt auto-answered and every note acked, until the phase reached `turnEnd`.
   `evolution` 62, `saffronNumber` 61, `snorlaxSong` 61, and 60 each of
   `chuggingContest`, `koffingSmoke`, `pokeballCatch`.
 
+### Task 10 — what landed
+
+- `src/engine/statuses.ts` and `src/engine/__tests__/statuses.test.ts`. The
+  plan's code was correct as written. Full suite 112/112, `tsc -b` clean,
+  `npm run build` succeeds, engine still DOM-free.
+- **Deviation 1 (planned): the square 38 decision is implemented here.**
+  `StatusExpiry` gains `rollToClear`, `STATUS_META` entries carry an optional
+  `clearsOn` list of faces, and square 38 applies `confuseRay` with it. The turn
+  machine drives it through the two new exports, `rollToClearStatuses` and
+  `clearByRoll`. `expireAfterTurn` deliberately ignores `rollToClear`, which is
+  pinned by its own test — without that, confusion would still evaporate after
+  one turn and the whole change would be inert.
+
+Audit run before committing — every status the board applies, checked against
+the mechanism its expiry names:
+
+| status | expiry |
+|---|---|
+| confuseRay | rollToClear |
+| copying, doubleMove, stringShot | afterNextTurn |
+| inSafariZone, inSilphCo, inTower, possessed, reflect, zubats | leaveSquare |
+| nonDominantHand, ruleMaker | endOfGame |
+
+Each one is removable by its own expiry **and survives the mechanisms that are
+not its own** — so nothing is silently dropped early and nothing is stuck
+forever. The audit also fails loudly if a `rollToClear` status has no
+`clearsOn`, which would make it permanent.
+
+**Two carry-forward notes for Task 11**, both things only the turn machine can
+finish:
+
+1. **`skipNextGym` is applied with `expires: 'endOfGame'`**, so nothing ever
+   removes it. Square 34's text is "skip the *next* gym", so **Task 11 must call
+   `clearStatus` once the holder passes a gold gym**, or evolving grants gym
+   immunity for the rest of the game. It is the one status in `STATUS_META` no
+   square applies — it comes from the evolution prompt in `prompts.ts`.
+2. **`zubats` has no logic yet.** `movementFor` handles String Shot and the
+   bicycle, but "roll 3 or more to escape this square" is a movement *gate*, not
+   a modifier, so it belongs to the turn machine alongside the `rollToClear`
+   roll.
+
 ### Open finding from Task 9: Pokéball loses half its rule (resolved in `05ef6c8`)
 
 Square 61's action reads "If your favorite Pokemon is on the board, roll a 1-3
@@ -517,10 +559,10 @@ Notes a later task will need:
    otherwise execute directly, keeping the TDD steps and per-task commits.
 3. Run its `scripts/sdd-workspace` on the plan path to recreate the workspace,
    then seed a fresh ledger from the Status table above. **Do not re-dispatch
-   Tasks 1-9** — all are committed on `2026-rewrite`.
-4. Resume at **Task 10 (Status lifecycle), BASE `05ef6c8`**. Read "Rule
-   decisions" first: Task 10 must add the conditional `StatusExpiry` variant
-   that squares 38's confuseRay needs.
+   Tasks 1-10** — all are committed on `2026-rewrite`.
+4. Resume at **Task 11 (Turn machine and reducer), BASE `653057f`**. Read the
+   two carry-forward notes at the end of "Task 10 — what landed" first; both
+   are things only the turn machine can finish.
 
 Task 5's board data is now the substrate for Tasks 6-13. Two audit scripts from
 the notes above are worth re-running whenever engine or board data changes: the
@@ -536,12 +578,14 @@ than at the end of the task.
 
 ### State at handoff
 
-Tasks 1-9 complete, and Tasks 5-6 reviewed. Local `2026-rewrite` is ahead of
+Tasks 1-10 complete, and Tasks 5-6 reviewed. Local `2026-rewrite` is ahead of
 both pushed branches — **the commits below from `ec543f9` onward are unpushed**
 (this machine's SSH key is not usable from the agent sandbox; fetch and push
 over HTTPS with the `gh` credential helper instead).
 
 ```text
+653057f  feat(engine): status registry, movement modifiers and zone upkeep   <- Task 10
+889717a  docs: record the four rule decisions and their consequences
 05ef6c8  fix(rules): resolve four text-vs-effect mismatches on the board
 6115f45  docs: ledger task 9, correct the plan's two undrained prompt tests
 48dbf7d  feat(engine): prompt-parking effects and prompt resolution          <- Task 9
@@ -563,9 +607,9 @@ c0a6d3a  docs: ledger task 4 complete, resume point now task 5
 b1f654e  docs: add execution progress record for the react rewrite
 ```
 
-Green at handoff: **93 tests across 10 files**, `tsc -b` clean, `npm run build`
+Green at handoff: **112 tests across 11 files**, `tsc -b` clean, `npm run build`
 succeeds. What exists so far is
-`src/engine/{rng,types,amount,targets,effects,prompts}.ts`
+`src/engine/{rng,types,amount,targets,effects,prompts,statuses}.ts`
 and `src/data/{types,starters}.ts` +
 `src/data/boards/{original.ts,original.coords.json}`.
 No React beyond the Task 1 scaffold — the app still renders the smoke-test shell,
