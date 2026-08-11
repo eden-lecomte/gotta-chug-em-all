@@ -9,12 +9,12 @@ jQuery game and must not be merged into until Task 26)
 **Base commit (pre-rewrite):** `2c81ca2`, also tagged **`v0-jquery`**
 **Method as planned:** superpowers:subagent-driven-development — fresh
 implementer subagent per task, task review after each, broad review at the end.
-**Method actually used for Tasks 2-10:** direct execution (see "Deviation from
+**Method actually used for Tasks 2-11:** direct execution (see "Deviation from
 the SDD method" below).
 
 ---
 
-## Status: 10 of 26 tasks complete
+## Status: 11 of 26 tasks complete
 
 | Task | Status | Commits |
 |---|---|---|
@@ -28,8 +28,9 @@ the SDD method" below).
 | 8. Effect interpreter — random effects | ✅ complete (1 deviation) | `6afd9c0` |
 | 9. Effect interpreter — prompts and player input | ✅ complete (1 deviation) | `48dbf7d` |
 | 10. Status lifecycle | ✅ complete (1 deviation) | `653057f` |
-| 11. Turn machine and reducer | ⬜ next | — |
-| 12-26 | ⬜ pending | — |
+| 11. Turn machine and reducer | ✅ complete (1 deviation) | `b0890bf` |
+| 12. Trainer battles | ⬜ next | — |
+| 13-26 | ⬜ pending | — |
 
 ### Task 1 — what landed
 
@@ -339,6 +340,28 @@ finish:
    bicycle, but "roll 3 or more to escape this square" is a movement *gate*, not
    a modifier, so it belongs to the turn machine alongside the `rollToClear`
    roll.
+
+### Task 11 — what landed
+
+- `src/engine/turn.ts`, `src/engine/reducer.ts`, `src/engine/__tests__/turn.test.ts`,
+  plus `queueExit` threaded through `GameState`, `makeState` and `drainQueue`.
+  The plan's code was correct as written. Suite 129/129, `tsc -b` clean, build
+  succeeds.
+- **Both Task 10 carry-forwards are closed.** `stepOnce` consumes `skipNextGym`
+  as the player walks past a gold gym, so evolving skips exactly one; Zubats is
+  a movement gate at `ROLL`, pinning on a 1-2 for a drink and clearing on a 3+.
+- **Deviation 1: the plan does not implement `confuseRay`**, which is
+  unsurprising — the plan predates the square 38 decision. Added to `ROLL`: a
+  confused player's roll doubles as the attempt to shake it off, and failing
+  spends the turn. `DICE_SHOWN` short-circuits for both pinned cases, so a
+  pinned player never enters `moving`. Two tests cover it; expected count in the
+  plan corrected 14 → 17.
+
+Why `queueExit` exists, since it is the one piece of state that looks
+redundant: the queue is drained both for square effects (which end the turn)
+and for turn-start upkeep (which must land back on `idle` so the player can
+roll). A prompt can pause either one, so the exit phase has to be serializable
+state rather than a parameter.
 
 ### Open finding from Task 9: Pokéball loses half its rule (resolved in `05ef6c8`)
 

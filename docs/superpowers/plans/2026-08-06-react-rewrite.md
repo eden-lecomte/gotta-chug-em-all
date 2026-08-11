@@ -3297,6 +3297,27 @@ describe('zubats', () => {
   });
 });
 
+describe('confuse ray', () => {
+  const confused = (seed: number) => makeState({
+    seed,
+    phase: { name: 'idle' },
+    players: [makePlayer('a', { square: 20, statuses: [{ id: 'confuseRay', expires: 'rollToClear', appliedOnSquare: 38 }] })],
+  });
+
+  it('costs the turn and keeps the status on a 4-6', () => {
+    const landed = rollAndWalk(confused(seedFor(5)));
+    expect(landed.players[0].square).toBe(20);
+    expect(landed.players[0].statuses.map((s) => s.id)).toEqual(['confuseRay']);
+    expect(landed.phase).toEqual({ name: 'turnEnd' });
+  });
+
+  it('clears on a 1-3 and the player moves that many squares', () => {
+    const landed = rollAndWalk(confused(seedFor(3)));
+    expect(landed.players[0].statuses).toHaveLength(0);
+    expect(landed.players[0].square).toBe(23);
+  });
+});
+
 describe('resolving and ending a turn', () => {
   it('queues the landed square effects on DISMISS_SQUARE', () => {
     // Square 50 is Tauros: drink 2, no prompts.
@@ -3496,10 +3517,15 @@ import { BOARD_ORIGINAL, getSquare } from '../data/boards/original';
 import { drainQueue, giveDrinks } from './effects';
 import { resolvePrompt } from './prompts';
 import { rollDie, rollPercent } from './rng';
-import { clearStatus, hasStatus, movementFor } from './statuses';
+import { clearByRoll, clearStatus, hasStatus, movementFor, rollToClearStatuses } from './statuses';
 import { activePlayer, pushLog, updatePlayer } from './targets';
 import { advanceTurn, LAST_SQUARE, stepOnce } from './turn';
 import type { Action, GameState } from './types';
+
+/** A player pinned in place this turn: the roll happened, the move does not. */
+function pinnedInPlace(state: GameState, face: number, offTable: boolean): GameState {
+  return { ...state, phase: { name: 'rolling', face, offTable }, queue: [], queueExit: 'turnEnd' };
+}
 
 /**
  * The single entry point for every state change. Pure and total: an action
@@ -3523,12 +3549,23 @@ export function reduce(state: GameState, action: Action): GameState {
         next = pushLog(next, 'info', `${active.name} knocked the die off the table!`);
       }
 
+      // Confuse Ray: this same roll is the attempt to shake it off. Fail and
+      // the turn is spent; succeed and the roll still moves you.
+      if (rollToClearStatuses(active).length > 0) {
+        next = clearByRoll(next, active.id, face);
+        if (rollToClearStatuses(activePlayer(next)).length > 0) {
+          next = pushLog(next, 'status', `${active.name} is still confused and loses the turn`);
+          return pinnedInPlace(next, face, offTable);
+        }
+        next = pushLog(next, 'status', `${active.name} snapped out of it`);
+      }
+
       // Zubats pins you here on a 1 or 2, and costs a drink.
       if (hasStatus(active, 'zubats')) {
         if (face <= 2) {
           next = giveDrinks(next, active.id, 1, null);
           next = pushLog(next, 'info', `${active.name} is still swarmed by Zubats`);
-          return { ...next, phase: { name: 'rolling', face, offTable }, queue: [], queueExit: 'turnEnd' };
+          return pinnedInPlace(next, face, offTable);
         }
         next = clearStatus(next, active.id, 'zubats');
       }
@@ -3539,8 +3576,11 @@ export function reduce(state: GameState, action: Action): GameState {
     case 'DICE_SHOWN': {
       if (state.phase.name !== 'rolling') return state;
       const active = activePlayer(state);
-      // A Zubats-pinned player already had their turn resolved during ROLL.
-      if (hasStatus(active, 'zubats')) return { ...state, phase: { name: 'turnEnd' } };
+      // A pinned player — swarmed or still confused — already had their turn
+      // resolved during ROLL.
+      if (hasStatus(active, 'zubats') || rollToClearStatuses(active).length > 0) {
+        return { ...state, phase: { name: 'turnEnd' } };
+      }
       const steps = movementFor(active, state.phase.face);
       return { ...state, phase: { name: 'moving', remaining: steps } };
     }
@@ -3597,7 +3637,7 @@ export function reduce(state: GameState, action: Action): GameState {
 - [ ] **Step 6: Run the test to verify it passes**
 
 Run: `npx vitest run src/engine/__tests__/turn.test.ts`
-Expected: PASS, 14 tests.
+Expected: PASS, 17 tests.
 
 - [ ] **Step 7: Run the whole suite**
 
