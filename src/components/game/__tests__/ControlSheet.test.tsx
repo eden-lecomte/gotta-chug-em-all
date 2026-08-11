@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, beforeEach } from 'vitest';
 import ControlSheet from '../ControlSheet';
@@ -53,7 +53,9 @@ describe('ControlSheet', () => {
     await user.click(screen.getByRole('button', { name: /scores & log/i }));
     expect(screen.getByRole('log')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: /close/i }));
-    expect(screen.queryByRole('log')).not.toBeInTheDocument();
+    // The sheet animates out, so it is still mounted the instant the click
+    // resolves; wait for AnimatePresence to finish removing it.
+    await waitFor(() => expect(screen.queryByRole('log')).not.toBeInTheDocument());
   });
 
   it('lists active statuses so nobody forgets they are confused', () => {

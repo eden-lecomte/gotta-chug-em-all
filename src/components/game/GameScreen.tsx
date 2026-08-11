@@ -2,6 +2,7 @@ import BoardView from '../board/BoardView';
 import ControlSheet from './ControlSheet';
 import DiceRoller from './DiceRoller';
 import GameOver from './GameOver';
+import MuteButton from './MuteButton';
 import PromptModal from './PromptModal';
 import SquareModal from './SquareModal';
 import { activePlayer } from '../../engine/selectors';
@@ -21,7 +22,10 @@ export default function GameScreen() {
     <div className="flex h-dvh flex-col bg-crust">
       <header className="flex items-center justify-between px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
         <span className="font-pokemon text-lg text-accent">{active.name}'s turn</span>
-        <span className="text-sm text-subtext">Turn {state.turnNumber}</span>
+        <span className="flex items-center gap-2 text-sm text-subtext">
+          Turn {state.turnNumber}
+          <MuteButton />
+        </span>
       </header>
 
       <div className="min-h-0 flex-1">

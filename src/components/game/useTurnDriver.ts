@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { playSfx } from '../../audio/useAudio';
 import { useGameStore } from '../../store/gameStore';
 import type { Action, Phase } from '../../engine/types';
 
@@ -34,4 +35,9 @@ export function useTurnDriver(): void {
     const timer = setTimeout(() => dispatch(action), delay);
     return () => clearTimeout(timer);
   }, [phaseName, dispatch]);
+
+  useEffect(() => {
+    if (phaseName === 'rolling') playSfx('roll');
+    if (phaseName === 'gameOver') playSfx('win');
+  }, [phaseName]);
 }
