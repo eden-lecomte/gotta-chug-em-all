@@ -9,12 +9,12 @@ jQuery game and must not be merged into until Task 26)
 **Base commit (pre-rewrite):** `2c81ca2`, also tagged **`v0-jquery`**
 **Method as planned:** superpowers:subagent-driven-development — fresh
 implementer subagent per task, task review after each, broad review at the end.
-**Method actually used for Tasks 2-6:** direct execution (see "Deviation from
+**Method actually used for Tasks 2-9:** direct execution (see "Deviation from
 the SDD method" below).
 
 ---
 
-## Status: 7 of 26 tasks complete
+## Status: 9 of 26 tasks complete
 
 | Task | Status | Commits |
 |---|---|---|
@@ -298,7 +298,7 @@ prompt auto-answered and every note acked, until the phase reached `turnEnd`.
   `evolution` 62, `saffronNumber` 61, `snorlaxSong` 61, and 60 each of
   `chuggingContest`, `koffingSmoke`, `pokeballCatch`.
 
-### Open finding from Task 9: Pokéball loses half its rule
+### Open finding from Task 9: Pokéball loses half its rule (resolved in `05ef6c8`)
 
 Square 61's action reads "If your favorite Pokemon is on the board, roll a 1-3
 to catch it! Roll a 4-6 and it got away, drink 3. If your favorite is not on the
@@ -426,6 +426,11 @@ The four claimed legacy bug fixes (squares 6, 13, 16, 39, 54) are all real and
 correctly encoded, verified against the legacy closures. Squares 32, 40, 49, 51,
 57, 58 and 62 — the ones with non-obvious branch structure — also match.
 
+> **Resolved 2026-08-11 in `05ef6c8`.** All four findings below (three here
+> plus the Pokéball one from Task 9) were decided and, except square 38,
+> implemented. The original text is kept for the reasoning; see "Rule decisions"
+> below for what was chosen.
+
 ### Open findings: three squares where the displayed text and the effects disagree
 
 Each square's `action` string is the legacy text verbatim and is shown to
@@ -471,6 +476,39 @@ rather than silently changed.
 
 ---
 
+## Rule decisions (2026-08-11, commit `05ef6c8`)
+
+Four squares showed the player one rule and ran another. All four were decided
+together; three are implemented, the fourth shapes Task 10. **These are settled
+— do not re-open them from the plan text, which has been updated to match.**
+
+| Square | Decision |
+|---|---|
+| 12 Gary | **Both halves round up.** A roll of 5 costs 3 and gives 3. |
+| 9 Clefairy | **Metronome copies drink/give only**, pays 2 when the copy pays nothing. |
+| 61 Pokéball | **Yes now rolls**: 1-3 catches it free, 4-6 costs 3. |
+| 38 Lapras | **Add a conditional expiry** so confuseRay clears only on a 1-3 roll — Task 10. |
+
+Notes a later task will need:
+
+- **Metronome's filter is recursive and keeps roll binders.** `copyableEffects`
+  strips movement, statuses, prompts, flavour and a nested `randomSquare` at
+  every branch depth, but always keeps `roll`/`rollWhile`, because a `drink`
+  reading a var whose binder was dropped throws on an unbound variable. That
+  also means Metronome can no longer recurse into square 9. `paysADrink` decides
+  the fallback statically, by scanning the stripped tree for any `drink`/`give`.
+- Post-change audit: over 3,000 seeds no pick leaked a non-payment effect;
+  1,451 picks copied a payment and 1,549 fell back to 2. All 63 squares still
+  play to `turnEnd` from 60 seeds each.
+- **Task 10 must add a `StatusExpiry` variant** for "clears when a roll
+  succeeds" and apply it to `confuseRay`. The square-38 data still says
+  `afterNextTurn` and needs updating alongside it.
+- Still open from the Task 9 review, not part of this batch: the hardcoded
+  `Math.min(62, …)` clamp in `prompts.ts`, and `chuggingContest` not validating
+  that `winnerId` is the active player or the named opponent.
+
+---
+
 ## How to resume
 
 1. Read `docs/superpowers/plans/2026-08-06-react-rewrite.md` — the plan carries
@@ -480,9 +518,9 @@ rather than silently changed.
 3. Run its `scripts/sdd-workspace` on the plan path to recreate the workspace,
    then seed a fresh ledger from the Status table above. **Do not re-dispatch
    Tasks 1-9** — all are committed on `2026-rewrite`.
-4. Resume at **Task 10 (Status lifecycle), BASE `48dbf7d`**. Read finding 3 in
-   "Review of Tasks 5 and 6" first: Task 10 owns the `confuseRay` expiry
-   contradiction.
+4. Resume at **Task 10 (Status lifecycle), BASE `05ef6c8`**. Read "Rule
+   decisions" first: Task 10 must add the conditional `StatusExpiry` variant
+   that squares 38's confuseRay needs.
 
 Task 5's board data is now the substrate for Tasks 6-13. Two audit scripts from
 the notes above are worth re-running whenever engine or board data changes: the
@@ -504,6 +542,8 @@ both pushed branches — **the commits below from `ec543f9` onward are unpushed*
 over HTTPS with the `gh` credential helper instead).
 
 ```text
+05ef6c8  fix(rules): resolve four text-vs-effect mismatches on the board
+6115f45  docs: ledger task 9, correct the plan's two undrained prompt tests
 48dbf7d  feat(engine): prompt-parking effects and prompt resolution          <- Task 9
 dc58766  docs: ledger task 8, fix the plan's false-positive metronome test
 6afd9c0  feat(engine): seeded random effects — branches, repeats, metronome  <- Task 8
@@ -523,7 +563,7 @@ c0a6d3a  docs: ledger task 4 complete, resume point now task 5
 b1f654e  docs: add execution progress record for the react rewrite
 ```
 
-Green at handoff: **88 tests across 10 files**, `tsc -b` clean, `npm run build`
+Green at handoff: **93 tests across 10 files**, `tsc -b` clean, `npm run build`
 succeeds. What exists so far is
 `src/engine/{rng,types,amount,targets,effects,prompts}.ts`
 and `src/data/{types,starters}.ts` +
