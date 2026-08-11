@@ -10,7 +10,6 @@ interface BoardViewProps {
   focusSquare: number;
   /** 1 shows the whole board; the game screen zooms in on the active token. */
   zoom?: number;
-  onTokenArrive?: () => void;
 }
 
 /** Spread tokens sharing a square around a small circle so none is hidden. */
@@ -22,7 +21,7 @@ function fanOffset(index: number, total: number): { dx: number; dy: number } {
 }
 
 export default function BoardView({
-  players, activeId, focusSquare, zoom = 2.2, onTokenArrive,
+  players, activeId, focusSquare, zoom = 2.2,
 }: BoardViewProps) {
   const focus = getSquare(BOARD_ORIGINAL, focusSquare);
   const { ref, transform } = useCamera({ x: focus.x, y: focus.y }, zoom);
@@ -50,7 +49,6 @@ export default function BoardView({
               x={square.x + dx}
               y={square.y + dy}
               active={player.id === activeId}
-              onArrive={player.id === activeId ? onTokenArrive : undefined}
             />
           );
         })}

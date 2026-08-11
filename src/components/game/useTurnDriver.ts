@@ -5,16 +5,23 @@ import type { Action, Phase } from '../../engine/types';
 
 /**
  * How long the UI dwells on a phase before the driver advances it. Phases not
- * listed here wait for the player (landed, note, prompt, battle) or for an
- * animation callback (moving).
+ * listed here are waiting on the player: landed, note, prompt, battle.
+ *
+ * `moving` is paced here rather than driven by the token's animation callback.
+ * The token animates to wherever the engine put the player, so its target only
+ * changes *after* a STEP_DONE — driving STEP_DONE from the animation instead
+ * deadlocks on the first step of every turn, because entering `moving` starts
+ * no animation at all. Keep this roughly in step with Token's transition.
  */
 export const PHASE_DELAYS: Partial<Record<Phase['name'], number>> = {
   rolling: 1600,
+  moving: 360,
   turnEnd: 700,
 };
 
 const NEXT_ACTION: Partial<Record<Phase['name'], Action>> = {
   rolling: { type: 'DICE_SHOWN' },
+  moving: { type: 'STEP_DONE' },
   turnEnd: { type: 'END_TURN' },
 };
 
@@ -24,6 +31,11 @@ const NEXT_ACTION: Partial<Record<Phase['name'], Action>> = {
  */
 export function useTurnDriver(): void {
   const phaseName = useGameStore((s) => s.state?.phase.name);
+  // Steps within a single `moving` phase do not change its name, so the timer
+  // has to re-arm on the remaining count or only the first step would fire.
+  const stepsRemaining = useGameStore((s) =>
+    s.state?.phase.name === 'moving' ? s.state.phase.remaining : null,
+  );
   const dispatch = useGameStore((s) => s.dispatch);
 
   useEffect(() => {
@@ -34,7 +46,7 @@ export function useTurnDriver(): void {
 
     const timer = setTimeout(() => dispatch(action), delay);
     return () => clearTimeout(timer);
-  }, [phaseName, dispatch]);
+  }, [phaseName, stepsRemaining, dispatch]);
 
   useEffect(() => {
     if (phaseName === 'rolling') playSfx('roll');

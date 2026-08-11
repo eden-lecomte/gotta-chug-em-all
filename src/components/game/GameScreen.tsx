@@ -11,12 +11,10 @@ import { useTurnDriver } from './useTurnDriver';
 
 export default function GameScreen() {
   const state = useGameStore((s) => s.state);
-  const dispatch = useGameStore((s) => s.dispatch);
   useTurnDriver();
 
   if (!state) return null;
   const active = activePlayer(state);
-  const moving = state.phase.name === 'moving';
 
   return (
     <div className="flex h-dvh flex-col bg-crust">
@@ -33,7 +31,6 @@ export default function GameScreen() {
           players={state.players}
           activeId={active.id}
           focusSquare={active.square}
-          onTokenArrive={moving ? () => dispatch({ type: 'STEP_DONE' }) : undefined}
         />
       </div>
 

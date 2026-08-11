@@ -7,10 +7,9 @@ interface TokenProps {
   x: number;
   y: number;
   active: boolean;
-  onArrive?: () => void;
 }
 
-export default function Token({ player, x, y, active, onArrive }: TokenProps) {
+export default function Token({ player, x, y, active }: TokenProps) {
   const starter = getStarter(player.starter);
   return (
     <motion.div
@@ -24,7 +23,6 @@ export default function Token({ player, x, y, active, onArrive }: TokenProps) {
       }}
       animate={{ left: `${x}%`, top: `${y}%` }}
       transition={{ duration: 0.35, ease: 'easeInOut' }}
-      onAnimationComplete={onArrive}
     />
   );
 }
