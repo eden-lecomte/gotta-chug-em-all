@@ -132,7 +132,7 @@ const RULES: Record<number, { kind?: SquareKind; effects: Effect[] }> = {
     kind: 'silverZone',
     effects: [
       { kind: 'drink', target: 'everyone', amount: n(1) },
-      { kind: 'applyStatus', target: 'self', status: 'inTower', expires: 'leaveSquare' },
+      { kind: 'applyStatus', target: 'self', status: 'inTower', expires: 'leaveZone' },
     ],
   },
 
@@ -197,7 +197,7 @@ const RULES: Record<number, { kind?: SquareKind; effects: Effect[] }> = {
 
   35: { effects: [{ kind: 'applyStatus', target: 'self', status: 'reflect', expires: 'leaveSquare' }] },
 
-  36: { kind: 'silverZone', effects: [{ kind: 'applyStatus', target: 'self', status: 'inSilphCo', expires: 'leaveSquare' }] },
+  36: { kind: 'silverZone', effects: [{ kind: 'applyStatus', target: 'self', status: 'inSilphCo', expires: 'leaveZone' }] },
 
   37: { kind: 'silverZone', effects: [{ kind: 'drink', target: 'self', amount: { kind: 'perPlayer' } }] },
 
@@ -250,7 +250,7 @@ const RULES: Record<number, { kind?: SquareKind; effects: Effect[] }> = {
     ],
   },
 
-  48: { kind: 'silverZone', effects: [{ kind: 'applyStatus', target: 'self', status: 'inSafariZone', expires: 'leaveSquare' }] },
+  48: { kind: 'silverZone', effects: [{ kind: 'applyStatus', target: 'self', status: 'inSafariZone', expires: 'leaveZone' }] },
 
   49: {
     kind: 'silverZone',

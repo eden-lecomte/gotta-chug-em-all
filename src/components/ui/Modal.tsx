@@ -9,7 +9,12 @@ interface ModalProps {
 
 export default function Modal({ title, children, actions }: ModalProps) {
   return (
-    <div className="fixed inset-0 z-40 grid place-items-end bg-crust/80 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur-sm sm:place-items-center">
+    // No scrim over the board and no backdrop blur: the card explains the square
+    // the player just landed on, and reading it means reading that square at the
+    // same time. Separation comes from a gradient that only darkens behind the
+    // card and from the card's own opaque background — see BoardView's anchorY,
+    // which lifts the focused square clear of the card.
+    <div className="fixed inset-0 z-40 grid place-items-end bg-linear-to-t from-crust via-crust/50 to-transparent p-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:place-items-center">
       <motion.div
         role="dialog"
         aria-modal="true"

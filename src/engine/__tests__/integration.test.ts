@@ -40,6 +40,7 @@ function playToCompletion(start: GameState): GameState {
       : state.phase.name === 'moving' ? { type: 'STEP_DONE' }
       : state.phase.name === 'landed' ? { type: 'DISMISS_SQUARE' }
       : state.phase.name === 'note' ? { type: 'ACK_NOTE' }
+      : state.phase.name === 'outcome' ? { type: 'ACK_OUTCOME' }
       : state.phase.name === 'battle' ? { type: 'ACK_BATTLE' }
       : state.phase.name === 'prompt' ? { type: 'RESOLVE_PROMPT', result: answer(state) }
       : { type: 'END_TURN' };

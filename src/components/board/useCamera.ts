@@ -5,7 +5,7 @@ import { cameraTransform, transformString, type Viewport } from './camera';
  * Measures the viewport element and returns the transform that centres `focus`.
  * Re-measures on resize and orientation change via ResizeObserver.
  */
-export function useCamera(focus: { x: number; y: number } | null, zoom: number) {
+export function useCamera(focus: { x: number; y: number } | null, zoom: number, anchorY?: number) {
   const ref = useRef<HTMLDivElement>(null);
   const [viewport, setViewport] = useState<Viewport>({ width: 0, height: 0 });
 
@@ -19,5 +19,5 @@ export function useCamera(focus: { x: number; y: number } | null, zoom: number) 
     return () => observer.disconnect();
   }, []);
 
-  return { ref, transform: transformString(cameraTransform({ viewport, focus, zoom })) };
+  return { ref, transform: transformString(cameraTransform({ viewport, focus, zoom, anchorY })) };
 }

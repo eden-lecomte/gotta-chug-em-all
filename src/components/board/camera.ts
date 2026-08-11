@@ -12,13 +12,19 @@ export interface CameraOpts {
   readonly focus: { x: number; y: number } | null;
   /** 1 fits the whole board; higher zooms in on the focus. */
   readonly zoom: number;
+  /**
+   * Where down the viewport the focus point lands: 0 is the top edge, 0.5 the
+   * middle, 1 the bottom. Raising the focus keeps it clear of a card sitting
+   * over the lower part of the screen.
+   */
+  readonly anchorY?: number;
 }
 
 /**
  * Compute a `translate(x, y) scale(s)` for a wrapper with transform-origin 0 0.
  * Everything the old Leaflet map did for us, minus the gesture conflicts.
  */
-export function cameraTransform({ viewport, focus, zoom }: CameraOpts): {
+export function cameraTransform({ viewport, focus, zoom, anchorY = 0.5 }: CameraOpts): {
   scale: number;
   x: number;
   y: number;
@@ -34,7 +40,8 @@ export function cameraTransform({ viewport, focus, zoom }: CameraOpts): {
   return {
     scale,
     x: viewport.width / 2 - targetX,
-    y: viewport.height / 2 - targetY,
+    // The whole board is always centred; only a focus point can be anchored.
+    y: (focus ? viewport.height * anchorY : viewport.height / 2) - targetY,
   };
 }
 

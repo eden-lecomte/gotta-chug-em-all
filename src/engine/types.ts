@@ -5,6 +5,7 @@ import type {
   Effect, Gender, StarterId, StatusExpiry, StatusId,
 } from '../data/types';
 
+
 export type PlayerId = string;
 
 export interface Status {
@@ -68,6 +69,11 @@ export type Phase =
   | { readonly name: 'moving'; readonly remaining: number }
   | { readonly name: 'landed' }
   | { readonly name: 'resolving' }
+  /**
+   * A queue has finished and what it did needs acknowledging. `lines` is the log
+   * it wrote, `face` the die it rolled if a single roll decided the outcome.
+   */
+  | { readonly name: 'outcome'; readonly title: string; readonly lines: readonly string[]; readonly face: number | null }
   | { readonly name: 'prompt'; readonly prompt: Prompt }
   | { readonly name: 'note'; readonly text: string }
   | { readonly name: 'battle'; readonly opponentId: PlayerId; readonly rolls: readonly [number, number] }
@@ -94,6 +100,25 @@ export interface GameState {
   readonly queue: readonly Effect[];
   /** Phase to enter when the queue empties. Turn-start upkeep exits to 'idle'. */
   readonly queueExit: 'idle' | 'turnEnd';
+  /**
+   * Log seq the current queue started from. Everything logged after it is what
+   * this queue did, which is what the outcome card reports. Set when a queue is
+   * filled, not when one resumes — a note or prompt in the middle of a square
+   * must not split its outcome in two.
+   */
+  readonly resolveFrom: number;
+  /**
+   * Face of the single die that decided the current queue, if one did. Only
+   * `roll` and `rollBranch` set it; effects that roll repeatedly leave it null,
+   * since no one number describes what happened.
+   */
+  readonly squareRoll: number | null;
+  /**
+   * Silver section the active player crossed into during this move, if any. The
+   * reducer turns it into the card that states the section's rule, then clears
+   * it — nothing outside that handover should read it.
+   */
+  readonly enteredZone: StatusId | null;
   /** Values bound by `roll`/`rollBranch`/`rollWhile`, cleared each turn. */
   readonly vars: Readonly<Record<string, number>>;
   readonly lastRoll: number | null;
@@ -111,6 +136,8 @@ export type Action =
   | { readonly type: 'DISMISS_SQUARE' }
   | { readonly type: 'ACK_NOTE' }
   | { readonly type: 'ACK_BATTLE' }
+  /** Player read what the square did to them; finish the turn. */
+  | { readonly type: 'ACK_OUTCOME' }
   | { readonly type: 'RESOLVE_PROMPT'; readonly result: PromptResult }
   | { readonly type: 'END_TURN' };
 

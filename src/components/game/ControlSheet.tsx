@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { getStarter } from '../../data/starters';
 import { activePlayer, scoreboard } from '../../engine/selectors';
 import { STATUS_META } from '../../engine/statuses';
 import { useGameStore } from '../../store/gameStore';
@@ -16,22 +15,8 @@ export default function ControlSheet() {
 
   return (
     <>
+      {/* Turn order and totals live in the header's ScorePanel now. */}
       <div className="flex flex-col gap-3 border-t border-surface0 bg-mantle p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
-        <ul className="flex gap-3 overflow-x-auto">
-          {state.players.map((player) => (
-            <li
-              key={player.id}
-              aria-label={`${player.name} has ${player.drinks} drinks`}
-              data-active={String(player.id === active.id)}
-              className="flex shrink-0 items-center gap-2 rounded-lg bg-surface0 px-3 py-2 data-[active=true]:ring-2 data-[active=true]:ring-accent"
-            >
-              <img src={getStarter(player.starter).sprite} alt="" className="size-8" />
-              <span className="text-sm">{player.name}</span>
-              <span className="font-pokemon text-lg text-yellow">{player.drinks}</span>
-            </li>
-          ))}
-        </ul>
-
         {active.statuses.length > 0 && (
           <ul className="flex flex-wrap gap-2">
             {active.statuses.map((status) => (

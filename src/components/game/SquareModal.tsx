@@ -1,6 +1,7 @@
 import { BOARD_ORIGINAL, getSquare } from '../../data/boards/original';
 import { activePlayer } from '../../engine/selectors';
 import { useGameStore } from '../../store/gameStore';
+import SquareCrop from '../board/SquareCrop';
 import Modal from '../ui/Modal';
 
 export default function SquareModal() {
@@ -26,6 +27,7 @@ export default function SquareModal() {
           </button>
         }
       >
+        <SquareCrop squareId={active.square} />
         <p>{square.action}</p>
       </Modal>
     );

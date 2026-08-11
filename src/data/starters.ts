@@ -7,6 +7,7 @@ export interface Starter {
   readonly dex: number;
   readonly sprite: string;
   readonly animated: string;
+  readonly cry: string;
 }
 
 const DEX: Record<StarterId, [label: string, dex: number]> = {
@@ -31,6 +32,7 @@ export const STARTERS: readonly Starter[] = Object.freeze(
       dex,
       sprite: assetUrl(`/img/sprites/${dex}.png`),
       animated: assetUrl(`/img/sprites/animated/${dex}.gif`),
+      cry: assetUrl(`/audio/cries/${dex}.ogg`),
     });
   }),
 );

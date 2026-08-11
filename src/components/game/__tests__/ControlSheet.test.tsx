@@ -40,12 +40,6 @@ describe('ControlSheet', () => {
     expect(screen.getByRole('button', { name: /roll/i })).toBeDisabled();
   });
 
-  it('shows every player drink total', () => {
-    render(<ControlSheet />);
-    expect(screen.getByLabelText('Eden has 0 drinks')).toBeInTheDocument();
-    expect(screen.getByLabelText('Cheese has 0 drinks')).toBeInTheDocument();
-  });
-
   it('opens and closes the detail sheet', async () => {
     const user = userEvent.setup();
     render(<ControlSheet />);

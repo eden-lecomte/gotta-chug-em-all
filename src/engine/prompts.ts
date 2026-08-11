@@ -1,6 +1,7 @@
 import type { Effect } from '../data/types';
 import { giveDrinks } from './effects';
 import { rollDie } from './rng';
+import { changeSquare } from './statuses';
 import { activePlayer, pushLog, updatePlayer } from './targets';
 import type { GameState, PromptResult } from './types';
 
@@ -53,7 +54,7 @@ export function resolvePrompt(state: GameState, result: PromptResult): GameState
 
       if (prompt.purpose === 'move') {
         const square = Math.min(62, Math.max(0, target.square + prompt.squares));
-        const moved = updatePlayer(state, target.id, (p) => ({ ...p, square }));
+        const moved = changeSquare(state, target.id, square);
         return resume(pushLog(moved, 'move', `${target.name} is moved to square ${square}`));
       }
 

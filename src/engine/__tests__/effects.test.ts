@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { applyEffect, drainQueue, giveDrinks } from '../effects';
+import { reduce } from '../reducer';
 import { makePlayer, makeState } from './factories';
 
 describe('drink effect', () => {
@@ -114,7 +115,8 @@ describe('drainQueue', () => {
     const next = drainQueue(state);
     expect(next.players[0].drinks).toBe(3);
     expect(next.queue).toHaveLength(0);
-    expect(next.phase).toEqual({ name: 'turnEnd' });
+    // A drained queue reports what it did rather than exiting silently.
+    expect(next.phase).toMatchObject({ name: 'outcome', lines: ['A drinks 1', 'A drinks 2'] });
   });
 
   it('stops and keeps the remaining queue when an effect parks the phase', () => {
@@ -128,5 +130,71 @@ describe('drainQueue', () => {
     expect(next.phase).toEqual({ name: 'note', text: 'pause here' });
     expect(next.queue).toHaveLength(1);
     expect(next.players[0].drinks).toBe(0);
+  });
+});
+
+describe('the outcome a drained queue reports', () => {
+  it('carries the face when a single roll decided things', () => {
+    const state = makeState({
+      queue: [
+        { kind: 'rollBranch', branches: [
+          { when: { parity: 'even' }, effects: [{ kind: 'drink', target: 'self', amount: { kind: 'fixed', value: 1 } }] },
+          { when: { parity: 'odd' }, effects: [{ kind: 'drink', target: 'self', amount: { kind: 'fixed', value: 2 } }] },
+        ] },
+      ],
+    });
+    const next = drainQueue(state);
+    if (next.phase.name !== 'outcome') throw new Error('Expected an outcome');
+    expect(next.phase.face).toBe(next.lastRoll);
+    expect(next.phase.face).toBeGreaterThanOrEqual(1);
+    // The roll and what it cost are both reported, not just the roll.
+    expect(next.phase.lines).toHaveLength(2);
+    expect(next.phase.lines[0]).toMatch(/rolled [1-6]/);
+  });
+
+  it('leaves the face null when no single roll describes the result', () => {
+    const state = makeState({
+      queue: [
+        { kind: 'rollWhile', as: 'n', continueWhen: { parity: 'even' }, max: 5 },
+        { kind: 'drink', target: 'self', amount: { kind: 'fixed', value: 1 } },
+      ],
+    });
+    const next = drainQueue(state);
+    expect(next.phase).toMatchObject({ name: 'outcome', face: null });
+  });
+
+  it('exits straight through when the queue did nothing worth saying', () => {
+    // A rule that applies to nobody logs nothing, so there is nothing to show.
+    const state = makeState({
+      queue: [{ kind: 'drink', target: 'self', amount: { kind: 'fixed', value: 0 } }],
+    });
+    expect(drainQueue(state).phase).toEqual({ name: 'turnEnd' });
+  });
+
+  it('reports what happened either side of a note as one outcome', () => {
+    let state = makeState({
+      phase: { name: 'landed' },
+      players: [makePlayer('a', { square: 50 }), makePlayer('b')],
+    });
+    // Tauros: drink 2. Swap in a queue that pauses halfway to prove the marker
+    // survives the note rather than restarting after it.
+    state = reduce(state, { type: 'DISMISS_SQUARE' });
+    if (state.phase.name !== 'outcome') throw new Error('Expected an outcome');
+    const marker = state.resolveFrom;
+
+    state = {
+      ...state,
+      phase: { name: 'resolving' },
+      queue: [
+        { kind: 'note', text: 'halfway' },
+        { kind: 'drink', target: 'self', amount: { kind: 'fixed', value: 3 } },
+      ],
+    };
+    state = drainQueue(state);
+    expect(state.phase).toEqual({ name: 'note', text: 'halfway' });
+
+    state = reduce(state, { type: 'ACK_NOTE' });
+    expect(state.resolveFrom).toBe(marker);
+    expect(state.phase).toMatchObject({ name: 'outcome', lines: ['A drinks 2', 'A drinks 3'] });
   });
 });

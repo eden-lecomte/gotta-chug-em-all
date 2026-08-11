@@ -2,7 +2,9 @@ import type { BranchCond, Effect } from '../data/types';
 import { BOARD_ORIGINAL, getSquare } from '../data/boards/original';
 import { resolveAmount } from './amount';
 import { nextInt, rollDie } from './rng';
+import { changeSquare } from './statuses';
 import { activePlayer, pushLog, resolveTarget, updatePlayer } from './targets';
+import { zoneAt } from './zones';
 import type { GameState, PlayerId, Prompt, ResolveCtx } from './types';
 
 const LAST_SQUARE = BOARD_ORIGINAL.squares.length - 1;
@@ -130,14 +132,15 @@ export function applyEffect(state: GameState, effect: Effect): GameState {
 
     case 'moveTo': {
       const active = activePlayer(state);
-      const next = updatePlayer(state, active.id, (p) => ({ ...p, square: clampSquare(effect.square) }));
-      return pushLog(next, 'move', `${active.name} moves to square ${clampSquare(effect.square)}`);
+      const target = clampSquare(effect.square);
+      const next = changeSquare(state, active.id, target);
+      return pushLog(next, 'move', `${active.name} moves to square ${target}`);
     }
 
     case 'moveBy': {
       const active = activePlayer(state);
       const target = clampSquare(active.square + effect.squares);
-      const next = updatePlayer(state, active.id, (p) => ({ ...p, square: target }));
+      const next = changeSquare(state, active.id, target);
       const verb = effect.squares < 0 ? 'is dragged back' : 'advances';
       return pushLog(next, 'move', `${active.name} ${verb} to square ${target}`);
     }
@@ -191,7 +194,13 @@ export function applyEffect(state: GameState, effect: Effect): GameState {
 
     case 'roll': {
       const [face, seed] = rollDie(state.seed);
-      const next = { ...state, seed, lastRoll: face, vars: { ...state.vars, [effect.as]: face } };
+      const next = {
+        ...state,
+        seed,
+        lastRoll: face,
+        squareRoll: face,
+        vars: { ...state.vars, [effect.as]: face },
+      };
       return pushLog(next, 'roll', `${activePlayer(state).name} rolled ${face}`);
     }
 
@@ -204,6 +213,7 @@ export function applyEffect(state: GameState, effect: Effect): GameState {
         ...state,
         seed,
         lastRoll: face,
+        squareRoll: face,
         vars,
         queue: [...branch.effects, ...state.queue],
       };
@@ -286,6 +296,28 @@ export function applyEffect(state: GameState, effect: Effect): GameState {
 }
 
 /**
+ * Where a finished queue goes. Anything a square or upkeep actually did is
+ * reported on an outcome card first, because a rolled die or a drink handed out
+ * is the whole point of the turn and used to be visible only in the log. An
+ * empty run — a square whose rule turned out to apply to nobody — has nothing
+ * to say and exits straight to the next phase.
+ */
+function exitQueue(state: GameState): GameState {
+  const lines = state.log.filter((entry) => entry.seq > state.resolveFrom).map((entry) => entry.text);
+  if (lines.length === 0) return { ...state, phase: { name: state.queueExit } };
+  // Upkeep is charged by the section the player is standing in, so naming it is
+  // the difference between "drink 2" and "drink 2, because you are still in
+  // Silph Co".
+  const zone = zoneAt(activePlayer(state).square);
+  const title =
+    state.queueExit === 'idle' ? (zone ? `Still in ${zone.name}` : 'Before you roll') : 'What happened';
+  return {
+    ...state,
+    phase: { name: 'outcome', title, lines, face: state.squareRoll },
+  };
+}
+
+/**
  * Apply queued effects until the queue empties or an effect parks the phase
  * (a note or a prompt). Resuming is just calling this again once the phase is
  * set back to 'resolving'.
@@ -297,7 +329,7 @@ export function drainQueue(state: GameState): GameState {
     current = applyEffect({ ...current, queue: rest }, head);
   }
   if (current.queue.length === 0 && current.phase.name === 'resolving') {
-    return { ...current, phase: { name: current.queueExit } };
+    return exitQueue(current);
   }
   return current;
 }

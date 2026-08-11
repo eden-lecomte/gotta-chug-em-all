@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-  STATUS_META, clearByRoll, clearOnLeaveSquare, clearStatus, expireAfterTurn,
+  STATUS_META, changeSquare, clearByRoll, clearStatus, expireAfterTurn,
   hasStatus, movementFor, rollToClearStatuses, turnStartEffects,
 } from '../statuses';
 import { makePlayer, makeState } from './factories';
@@ -46,26 +46,57 @@ describe('movementFor', () => {
   });
 });
 
-describe('clearOnLeaveSquare', () => {
+describe('changeSquare', () => {
   it('drops leaveSquare statuses once the player moves off', () => {
     const state = makeState({
-      players: [makePlayer('a', { square: 36, statuses: [status('inSilphCo', 'leaveSquare', 36)] })],
+      players: [makePlayer('a', { square: 24, statuses: [status('possessed', 'leaveSquare', 24)] })],
     });
-    expect(clearOnLeaveSquare(state, 'a', 37).players[0].statuses).toHaveLength(0);
+    expect(changeSquare(state, 'a', 25).players[0].statuses).toHaveLength(0);
   });
 
   it('keeps them while the player stays put', () => {
     const state = makeState({
-      players: [makePlayer('a', { square: 36, statuses: [status('inSilphCo', 'leaveSquare', 36)] })],
+      players: [makePlayer('a', { square: 24, statuses: [status('possessed', 'leaveSquare', 24)] })],
     });
-    expect(clearOnLeaveSquare(state, 'a', 36).players[0].statuses).toHaveLength(1);
+    expect(changeSquare(state, 'a', 24).players[0].statuses).toHaveLength(1);
   });
 
   it('never drops endOfGame statuses', () => {
     const state = makeState({
       players: [makePlayer('a', { square: 22, statuses: [status('nonDominantHand', 'endOfGame', 22)] })],
     });
-    expect(clearOnLeaveSquare(state, 'a', 40).players[0].statuses).toHaveLength(1);
+    // 45 is open board, so nothing is picked up along the way either.
+    expect(changeSquare(state, 'a', 45).players[0].statuses.map((s) => s.id)).toEqual(['nonDominantHand']);
+  });
+
+  it('keeps a leaveZone status while the player is still inside the section', () => {
+    // Silph Co runs 36-40, so 37 is still indoors.
+    const state = makeState({
+      players: [makePlayer('a', { square: 36, statuses: [status('inSilphCo', 'leaveZone', 36)] })],
+    });
+    expect(changeSquare(state, 'a', 37).players[0].statuses).toHaveLength(1);
+  });
+
+  it('drops a leaveZone status on the way out of the section', () => {
+    const state = makeState({
+      players: [makePlayer('a', { square: 40, statuses: [status('inSilphCo', 'leaveZone', 36)] })],
+    });
+    expect(changeSquare(state, 'a', 41).players[0].statuses).toHaveLength(0);
+  });
+
+  it('applies the section rule to anyone who walks past its entrance', () => {
+    // A roll from 35 never stops on 36, so entry cannot depend on landing there.
+    const state = makeState({ players: [makePlayer('a', { square: 35 })] });
+    const next = changeSquare(state, 'a', 38);
+    expect(hasStatus(next.players[0], 'inSilphCo')).toBe(true);
+    expect(next.enteredZone).toBe('inSilphCo');
+  });
+
+  it('does not re-announce a section the player is already inside', () => {
+    const state = makeState({
+      players: [makePlayer('a', { square: 37, statuses: [status('inSilphCo', 'leaveZone', 36)] })],
+    });
+    expect(changeSquare(state, 'a', 38).enteredZone).toBeNull();
   });
 });
 

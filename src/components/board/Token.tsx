@@ -15,7 +15,9 @@ export default function Token({ player, x, y, active }: TokenProps) {
     <motion.div
       aria-label={`${player.name} on square ${player.square}`}
       data-active={String(active)}
-      className="absolute size-[7%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-crust bg-contain bg-center bg-no-repeat ring-2 data-[active=true]:ring-accent data-[active=false]:ring-surface1"
+      // Squares sit about 8% of the board apart, so this leaves the artwork and
+      // rule text under the chip readable rather than covering the square.
+      className="absolute size-[5%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-crust bg-contain bg-center bg-no-repeat ring-2 data-[active=true]:ring-accent data-[active=false]:ring-surface1"
       style={{
         left: `${x}%`,
         top: `${y}%`,

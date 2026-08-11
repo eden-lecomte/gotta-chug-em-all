@@ -1,5 +1,6 @@
 import type { Effect, StatusId } from '../data/types';
-import { updatePlayer } from './targets';
+import { pushLog, updatePlayer } from './targets';
+import { zoneAt } from './zones';
 import type { GameState, Player, PlayerId, Status } from './types';
 
 /**
@@ -49,16 +50,61 @@ export function clearStatus(state: GameState, playerId: PlayerId, id: StatusId):
   }));
 }
 
-/** Drop zone statuses once the holder has actually left the square that applied them. */
-export function clearOnLeaveSquare(
-  state: GameState,
-  playerId: PlayerId,
-  newSquare: number,
-): GameState {
+/**
+ * Drop statuses the holder has now walked out of.
+ *
+ * `leaveSquare` lasts exactly as long as the square that applied it.
+ * `leaveZone` lasts for the whole silver section — the Pokémon Tower rule holds
+ * from the moment you enter until you are out the other side, so stepping from
+ * one tower square to the next must not clear it.
+ */
+function clearOnLeaveSquare(state: GameState, playerId: PlayerId, newSquare: number): GameState {
+  const zone = zoneAt(newSquare);
   return updatePlayer(state, playerId, (p) => ({
     ...p,
-    statuses: p.statuses.filter((s) => s.expires !== 'leaveSquare' || s.appliedOnSquare === newSquare),
+    statuses: p.statuses.filter((s) => {
+      if (s.expires === 'leaveSquare') return s.appliedOnSquare === newSquare;
+      if (s.expires === 'leaveZone') return zone !== null && zone.status === s.id;
+      return true;
+    }),
   }));
+}
+
+/**
+ * Put a player under a silver section's rule the moment they cross into it.
+ *
+ * Movement only stops on gold gyms, so a roll carrying someone from square 35 to
+ * 38 walks straight past Silph Co's entrance. Binding the rule to the section
+ * rather than to its first square is what makes a zone somewhere you are, not a
+ * square you happened to land on. `enteredZone` is left for the reducer to turn
+ * into the card that states the rule.
+ */
+function enterZone(state: GameState, playerId: PlayerId, from: number, to: number): GameState {
+  const zone = zoneAt(to);
+  if (!zone || zoneAt(from)?.status === zone.status) return state;
+
+  const withStatus = updatePlayer(state, playerId, (p) =>
+    hasStatus(p, zone.status)
+      ? p
+      : { ...p, statuses: [...p.statuses, { id: zone.status, expires: 'leaveZone', appliedOnSquare: to }] },
+  );
+  const named = state.players.find((p) => p.id === playerId)?.name ?? playerId;
+  return {
+    ...pushLog(withStatus, 'info', `${named} entered the ${zone.name}`),
+    enteredZone: zone.status,
+  };
+}
+
+/**
+ * The single place a token's square changes. Everything that moves a player —
+ * stepping, `moveTo`, `moveBy`, being dragged by someone else — goes through
+ * here, so leaving a square and crossing into a section can never be skipped by
+ * one path and honoured by another.
+ */
+export function changeSquare(state: GameState, playerId: PlayerId, to: number): GameState {
+  const from = state.players.find((p) => p.id === playerId)?.square ?? to;
+  const moved = updatePlayer(state, playerId, (p) => ({ ...p, square: to }));
+  return enterZone(clearOnLeaveSquare(moved, playerId, to), playerId, from, to);
 }
 
 export function expireAfterTurn(state: GameState, playerId: PlayerId): GameState {

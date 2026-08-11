@@ -1,6 +1,6 @@
 import { BOARD_ORIGINAL, getSquare } from '../data/boards/original';
 import { drainQueue } from './effects';
-import { clearOnLeaveSquare, clearStatus, expireAfterTurn, hasStatus, turnStartEffects } from './statuses';
+import { changeSquare, clearStatus, expireAfterTurn, hasStatus, turnStartEffects } from './statuses';
 import { activePlayer, pushLog, updatePlayer } from './targets';
 import type { GameState } from './types';
 
@@ -15,8 +15,7 @@ export function stepOnce(state: GameState): { state: GameState; stop: boolean } 
   const active = activePlayer(state);
   const target = Math.min(LAST_SQUARE, active.square + 1);
 
-  let next = updatePlayer(state, active.id, (p) => ({ ...p, square: target }));
-  next = clearOnLeaveSquare(next, active.id, target);
+  const next = changeSquare(state, active.id, target);
 
   if (target === LAST_SQUARE) return { state: next, stop: true };
 
@@ -53,7 +52,9 @@ export function beginTurn(state: GameState): GameState {
   };
 
   const logged = pushLog(fresh, 'turn', `${active.name}'s turn`);
-  return upkeep.length > 0 ? drainQueue(logged) : logged;
+  if (upkeep.length === 0) return logged;
+  // Marked after the turn line so the upkeep card reports only the upkeep.
+  return drainQueue({ ...logged, resolveFrom: logged.logSeq, squareRoll: null });
 }
 
 /**

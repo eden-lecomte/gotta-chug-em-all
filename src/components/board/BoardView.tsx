@@ -10,6 +10,8 @@ interface BoardViewProps {
   focusSquare: number;
   /** 1 shows the whole board; the game screen zooms in on the active token. */
   zoom?: number;
+  /** Where down the viewport the focused square sits — see `cameraTransform`. */
+  anchorY?: number;
 }
 
 /** Spread tokens sharing a square around a small circle so none is hidden. */
@@ -21,10 +23,10 @@ function fanOffset(index: number, total: number): { dx: number; dy: number } {
 }
 
 export default function BoardView({
-  players, activeId, focusSquare, zoom = 2.2,
+  players, activeId, focusSquare, zoom = 2.2, anchorY,
 }: BoardViewProps) {
   const focus = getSquare(BOARD_ORIGINAL, focusSquare);
-  const { ref, transform } = useCamera({ x: focus.x, y: focus.y }, zoom);
+  const { ref, transform } = useCamera({ x: focus.x, y: focus.y }, zoom, anchorY);
 
   return (
     <div ref={ref} className="relative h-full w-full overflow-hidden bg-crust">

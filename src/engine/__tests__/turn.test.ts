@@ -115,8 +115,10 @@ describe('confuse ray', () => {
 
   it('clears on a 1-3 and the player moves that many squares', () => {
     const landed = rollAndWalk(confused(seedFor(3)));
-    expect(landed.players[0].statuses).toHaveLength(0);
     expect(landed.players[0].square).toBe(23);
+    // 23 is the Pokémon Tower entrance, so walking in swaps the confusion for
+    // the section's own rule.
+    expect(landed.players[0].statuses.map((s) => s.id)).toEqual(['inTower']);
   });
 });
 
@@ -126,7 +128,10 @@ describe('resolving and ending a turn', () => {
     let state = makeState({ phase: { name: 'landed' }, players: [makePlayer('a', { square: 50 }), makePlayer('b')] });
     state = reduce(state, { type: 'DISMISS_SQUARE' });
     expect(state.players[0].drinks).toBe(2);
-    expect(state.phase).toEqual({ name: 'turnEnd' });
+    // The square's effects land immediately, but the turn waits on the player
+    // reading what it did to them.
+    expect(state.phase).toMatchObject({ name: 'outcome', lines: ['A drinks 2'] });
+    expect(reduce(state, { type: 'ACK_OUTCOME' }).phase).toEqual({ name: 'turnEnd' });
   });
 
   it('passes the turn to the next player on END_TURN', () => {
@@ -165,7 +170,37 @@ describe('resolving and ending a turn', () => {
     });
     const next = reduce(state, { type: 'END_TURN' });
     expect(next.players[1].drinks).toBe(2);
-    expect(next.phase).toEqual({ name: 'idle' });
+    // Upkeep is reported too, named after the section charging it, and lists
+    // only the upkeep — not the turn line logged just before it.
+    expect(next.phase).toMatchObject({ name: 'outcome', title: 'Still in Silph Co.', lines: ['B drinks 2'] });
+    expect(reduce(next, { type: 'ACK_OUTCOME' }).phase).toEqual({ name: 'idle' });
+  });
+
+  it('charges Silph Co upkeep from anywhere inside the section, not just its door', () => {
+    // Silph Co runs 36-40. The rule used to be pinned to square 36 and dropped
+    // the moment its holder stepped to 37.
+    const state = makeState({
+      phase: { name: 'turnEnd' },
+      players: [
+        makePlayer('a'),
+        makePlayer('b', { square: 39, statuses: [{ id: 'inSilphCo', expires: 'leaveZone', appliedOnSquare: 36 }] }),
+      ],
+    });
+    const next = reduce(state, { type: 'END_TURN' });
+    expect(next.players[1].drinks).toBe(2);
+    expect(next.phase).toMatchObject({ name: 'outcome', title: 'Still in Silph Co.' });
+  });
+
+  it('states the section rule when a player walks into one', () => {
+    // Rolling from 35 to 38 skips the entrance square entirely.
+    let state = makeState({ phase: { name: 'moving', remaining: 3 }, players: [makePlayer('a', { square: 35 }), makePlayer('b')] });
+    for (let step = 0; step < 3; step++) state = reduce(state, { type: 'STEP_DONE' });
+    expect(state.phase).toEqual({ name: 'landed' });
+    expect(state.enteredZone).toBe('inSilphCo');
+
+    state = reduce(state, { type: 'DISMISS_SQUARE' });
+    expect(state.phase).toMatchObject({ name: 'note', text: expect.stringContaining('Silph Co.') });
+    expect(state.enteredZone).toBeNull();
   });
 
   it('clears per-turn statuses when the turn passes', () => {

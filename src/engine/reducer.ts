@@ -5,6 +5,8 @@ import { rollDie, rollPercent } from './rng';
 import { clearByRoll, clearStatus, hasStatus, movementFor, rollToClearStatuses } from './statuses';
 import { activePlayer, pushLog, updatePlayer } from './targets';
 import { advanceTurn, LAST_SQUARE, stepOnce } from './turn';
+import { zoneOfStatus } from './zones';
+import type { Effect } from '../data/types';
 import type { Action, GameState } from './types';
 
 /** A player pinned in place this turn: the roll happened, the move does not. */
@@ -111,10 +113,22 @@ export function reduce(state: GameState, action: Action): GameState {
       }
 
       const square = getSquare(BOARD_ORIGINAL, active.square);
+      // Crossing into a silver section announces its rule before the square the
+      // player actually stopped on gets its say.
+      const zone = state.enteredZone ? zoneOfStatus(state.enteredZone) : null;
+      const intro: Effect[] = zone
+        ? [{ kind: 'note', text: `${zone.name} — ${zone.rule}` }]
+        : [];
+
       return drainQueue({
         ...state,
-        queue: [...square.effects],
+        queue: [...intro, ...square.effects],
         queueExit: 'turnEnd',
+        enteredZone: null,
+        // Everything logged from here on is this square's doing, and is what the
+        // outcome card will report once the queue drains.
+        resolveFrom: state.logSeq,
+        squareRoll: null,
         phase: { name: 'resolving' },
       });
     }
@@ -122,6 +136,11 @@ export function reduce(state: GameState, action: Action): GameState {
     case 'ACK_NOTE': {
       if (state.phase.name !== 'note') return state;
       return drainQueue({ ...state, phase: { name: 'resolving' } });
+    }
+
+    case 'ACK_OUTCOME': {
+      if (state.phase.name !== 'outcome') return state;
+      return { ...state, phase: { name: state.queueExit } };
     }
 
     case 'ACK_BATTLE': {
