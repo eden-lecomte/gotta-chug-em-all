@@ -9,12 +9,12 @@ jQuery game and must not be merged into until Task 26)
 **Base commit (pre-rewrite):** `2c81ca2`, also tagged **`v0-jquery`**
 **Method as planned:** superpowers:subagent-driven-development — fresh
 implementer subagent per task, task review after each, broad review at the end.
-**Method actually used for Tasks 2-13:** direct execution (see "Deviation from
+**Method actually used for Tasks 2-26:** direct execution (see "Deviation from
 the SDD method" below).
 
 ---
 
-## Status: 13 of 26 tasks complete
+## Status: 26 of 26 tasks complete — the rewrite is done
 
 | Task | Status | Commits |
 |---|---|---|
@@ -31,8 +31,18 @@ the SDD method" below).
 | 11. Turn machine and reducer | ✅ complete (1 deviation) | `b0890bf` |
 | 12. Trainer battles | ✅ complete | `7d28f54` |
 | 13. Game setup and full-game integration test | ✅ complete (2 deviations) | `b1a12bc` |
-| 14. Zustand store | ⬜ next | — |
-| 15-26 | ⬜ pending | — |
+| 14. Zustand store | ✅ complete | `5869ae1` |
+| 15. Board rendering and camera | ✅ complete (1 deviation) | `7f25bf8` |
+| 16-17. Lobby: names, starters, gender | ✅ complete | `7bc60d7` |
+| 18. Lobby: config and game start | ✅ complete | `a0bf5b7` |
+| 19. Game screen and turn driver | ✅ complete | `e68a3c4` |
+| 20. Control sheet | ✅ complete | `94bd61e` |
+| 21. Dice roller | ✅ complete | `a80c96e` |
+| 22. Square, note and battle modals | ✅ complete | `f7917b4` |
+| 23. Prompt modals | ✅ complete (1 deviation) | `f11a3c2` |
+| 24. Game over screen | ✅ complete | `26bdb83` |
+| 25. Audio | ✅ complete (1 deviation) | `aef7dac` |
+| 26. Legacy removal, PWA, mobile | ✅ complete (1 deviation) | `3adb808` |
 
 ### Task 1 — what landed
 
@@ -398,6 +408,63 @@ Two smaller plan errors fixed at the same time:
 The integration test also runs 100 seeds rather than the plan's one, since a
 single seed only proves one path across the board.
 
+### Tasks 14-26 — what landed
+
+The whole UI half, all following the plan's TDD steps. **Suite 221/221,
+`tsc -b` clean, `npm run build` succeeds.** Five plan errors surfaced, each
+caught by running the code rather than reading it:
+
+1. **Testing Library never cleaned up between tests (Task 15).** Vitest runs
+   without `globals`, so the automatic per-test cleanup never registers and
+   renders accumulate — the second `render` in a file found two of every
+   element. `src/test-setup.ts` now registers `cleanup` itself, guarded by a
+   `typeof document` check because the same setup file loads for the
+   node-environment engine tests. **This would have broken every component test
+   in Tasks 16-25**, so it is the single highest-value fix in this half.
+2. **The give-drinks picker contradicted its own test (Task 23).** The plan
+   incremented one drink per tap, so "2 drinks to 1 player" needed two taps on
+   the same face. One tap now hands over the prompt's full per-player amount.
+3. **A test raced an exit animation (Task 25).** The ControlSheet close
+   assertion ran while AnimatePresence was still unmounting. It passed in
+   isolation and failed in *every* full-suite run — worth remembering that
+   "passes alone" is not evidence. It now waits for removal.
+4. **The build did not typecheck (Task 13).** `npm run build` was bare
+   `vite build`; it is now `tsc -b --noEmit && vite build`.
+5. **Nothing made the app deployable from a subpath (Task 26).** See below.
+
+### Deploying from a subpath — the plan never covered this
+
+The handoff doc flagged that a GitHub Pages project site serves from
+`/gotta-chug-em-all/`, but setting Vite's `base` alone does **not** fix it:
+Vite rewrites *imported* assets, and every sprite, board image and audio cue in
+this app is a path **string living in data**, which it leaves alone.
+
+What actually landed:
+
+- `src/data/assets.ts` exports `assetUrl()`, which joins `import.meta.env.BASE_URL`.
+  `starters.ts`, `boards/original.ts` and `audio/useAudio.ts` all route through it.
+- The `@font-face` URLs in `index.css` are now relative (`../fonts/…`), which
+  resolves correctly both from `/src/index.css` in dev and `/assets/index-*.css`
+  in a build. Root-absolute CSS URLs are not rewritten either.
+- `index.html` uses relative `href`s for the icon and manifest, and the manifest
+  uses relative `start_url`/`scope`/icon paths.
+- `vite.config.ts` takes `base` from `BASE_PATH`, defaulting to `/`, so tests
+  and root deploys are unaffected.
+
+Verified two ways: a `BASE_PATH=/gotta-chug-em-all/` build contains **no
+root-absolute asset references**, and the default build, actually served,
+returns 200 for the board, a sprite, a font, the manifest, an icon and the audio.
+
+### Not verified: the five manual mobile checks
+
+Task 26 Step 5 asks for a real phone viewport — board fits with no horizontal
+scroll, one-thumb reach on the roll button, no tap-zoom, modals clear of the
+keyboard and home indicator, and a clean rotate. **No browser automation is
+installed on this machine and none was added**, so these are the one part of the
+plan that has not been checked. Everything they depend on is in place
+(`viewport-fit=cover`, `dvh` units, `env(safe-area-inset-*)` padding, `min-h-14`
+targets, a ResizeObserver-driven camera), but that is an argument, not a test.
+
 ### Open finding from Task 9: Pokéball loses half its rule (resolved in `05ef6c8`)
 
 Square 61's action reads "If your favorite Pokemon is on the board, roll a 1-3
@@ -609,112 +676,30 @@ Notes a later task will need:
 
 ---
 
-## How to resume
+## Where it stands
 
-1. Read `docs/superpowers/plans/2026-08-06-react-rewrite.md` — the plan carries
-   full implementation code for every task.
-2. Invoke `superpowers:subagent-driven-development` **if it is available**;
-   otherwise execute directly, keeping the TDD steps and per-task commits.
-3. Run its `scripts/sdd-workspace` on the plan path to recreate the workspace,
-   then seed a fresh ledger from the Status table above. **Do not re-dispatch
-   Tasks 1-10** — all are committed on `2026-rewrite`.
-4. Resume at **Task 11 (Turn machine and reducer), BASE `653057f`**. Read the
-   two carry-forward notes at the end of "Task 10 — what landed" first; both
-   are things only the turn machine can finish.
+**All 26 tasks are complete.** The game is playable end to end: lobby, board,
+dice, every square rule on board 1, all eight prompts, statuses, trainer
+battles and a win screen — with the engine covered headlessly.
 
-Task 5's board data is now the substrate for Tasks 6-13. Two audit scripts from
-the notes above are worth re-running whenever engine or board data changes: the
-board audit (unbound-var scan, empty-effect scan, JSON round-trip, kind tally)
-and the Task 6 sweep that resolves all 127 board Amounts through
-`resolveAmount`.
+- **221 tests across 30 files**, `tsc -b` clean, `npm run build` succeeds.
+- **49MB of legacy site deleted** (`js/ css/ fonts/ img/ audio/`), preserved at
+  the `v0-jquery` tag.
+- Bundle: 371KB raw, **117KB gzipped**.
 
-The plan's code has been wrong twice in substance (corrections 3 and 4), both caught by
-running it rather than reading it. **Typecheck every task before trusting its
-listing** — Task 6's bug was a hard compile error, not a subtle one, and would
-have been found in seconds by running `tsc` right after writing the file rather
-than at the end of the task.
+### What to do next
 
-### State at handoff
+1. **Run the five mobile checks** in Task 26 Step 5 on a real phone —
+   `npm run dev -- --host`. They are the only unverified part of the plan.
+2. **Deploy.** Pages currently serves the 2016 `gh-pages` stub. For a project
+   site: `BASE_PATH=/gotta-chug-em-all/ npm run build`, publish `dist/`.
+3. Optional: the two smaller findings from the Task 9 review are still open —
+   the hardcoded `Math.min(62, …)` clamp in `prompts.ts`, and
+   `chuggingContest` not validating `winnerId`.
 
-Tasks 1-10 complete, and Tasks 5-6 reviewed. Local `2026-rewrite` is ahead of
-both pushed branches — **the commits below from `ec543f9` onward are unpushed**
-(this machine's SSH key is not usable from the agent sandbox; fetch and push
-over HTTPS with the `gh` credential helper instead).
+Deferred by design, unchanged from the plan: **board 2** (no square data exists
+anywhere in the legacy repo, only the image) and **room multiplayer** (the
+action log plus seeded RNG make it a transport problem, not a rewrite).
 
-```text
-653057f  feat(engine): status registry, movement modifiers and zone upkeep   <- Task 10
-889717a  docs: record the four rule decisions and their consequences
-05ef6c8  fix(rules): resolve four text-vs-effect mismatches on the board
-6115f45  docs: ledger task 9, correct the plan's two undrained prompt tests
-48dbf7d  feat(engine): prompt-parking effects and prompt resolution          <- Task 9
-dc58766  docs: ledger task 8, fix the plan's false-positive metronome test
-6afd9c0  feat(engine): seeded random effects — branches, repeats, metronome  <- Task 8
-a8d0adb  docs: ledger task 7 complete, resume point now task 8
-36af968  feat(engine): deterministic effect interpreter and queue drain      <- Task 7
-ec543f9  docs: review tasks 5 and 6, log three text-vs-effect mismatches
-d373c73  docs: ledger task 6, correct plan's unused PromptId import
-741c010  feat(engine): state types, amount evaluator and target resolution   <- Task 6
-134f2ce  docs: ledger task 5, correct plan's webp step to lossless
-35abc38  feat(data): board 1 squares as declarative effects, fixing 4 bugs   <- Task 5
-c0a6d3a  docs: ledger task 4 complete, resume point now task 5
-094f02a  feat(data): extract board 1 coordinates from legacy leaflet latlng  <- Task 4
-8bb2c47  docs: ledger task 3 complete, resume point now task 4
-9f1b347  feat(data): effect/square types and starter roster                  <- Task 3
-65094a3  docs: ledger task 2 complete, resume point now task 3
-93f95cf  feat(engine): seeded deterministic rng                              <- Task 2
-b1f654e  docs: add execution progress record for the react rewrite
-```
-
-Green at handoff: **112 tests across 11 files**, `tsc -b` clean, `npm run build`
-succeeds. What exists so far is
-`src/engine/{rng,types,amount,targets,effects,prompts,statuses}.ts`
-and `src/data/{types,starters}.ts` +
-`src/data/boards/{original.ts,original.coords.json}`.
-No React beyond the Task 1 scaffold — the app still renders the smoke-test shell,
-which is expected until Task 19.
-
-Per task: `scripts/task-brief PLAN N` → dispatch implementer → record BASE before
-dispatching → `scripts/review-package PLAN BASE HEAD` → dispatch task reviewer →
-fix loop if needed → ledger the completion.
-
-### Review-package caveat
-
-Task 26 deletes the remaining legacy site, so its raw diff will again be
-enormous (thousands of asset deletions). As with Task 1, filter the bulk
-deletions out of the diff body and hand the reviewer a path list separately,
-otherwise the package is unreadable. Task 1's filtered package shrank from
-68,573 lines to 1,896.
-
----
-
-## Model recommendations per task
-
-The plan carries complete implementation code, so most tasks are transcription
-plus debugging. None of the plan's code has ever been executed, so the executor
-will hit real bugs in it — that is what sets the floor.
-
-| Tasks | Model |
-|---|---|
-| 1, 3, 4, 16-18, 20, 21, 24, 25, 26 | cheap tier (mechanical, complete spec) |
-| 2, 6, 7, 9, 10, 14, 15, 19, 22, 23 | mid tier (real logic, tests pin behaviour) |
-| **5, 8, 11, 12, 13** | **most capable** |
-
-The five flagged tasks are where untested plan code is most likely wrong:
-
-- **5** — 63 squares of dense data; the failure mode is *abbreviation*
-  (`// ... remaining squares`) silently dropping half the board's rules.
-- **8** — seed-searching test helpers; an off-by-one in `rollWhile` needs real
-  reasoning to locate.
-- **11** — the turn machine. Gold-gym stops, Zubats pinning and `LAST_SQUARE`
-  clamping interact in ways that were reasoned about but never executed.
-- **12** — `ACK_BATTLE` was rewritten during plan self-review and has never been
-  typechecked.
-- **13** — the full-game integration test throws `Stalled in phase X`.
-  Diagnosing that means finding a missing reducer transition.
-
-### The risk to watch, on every task
-
-**Making a test pass by weakening the test.** The Task 13 integration test is the
-whole safety net. If a subagent loosens an assertion or drops a
-`playToCompletion` check, the net is gone and only a test-file diff reveals it.
-Check this explicitly in each review.
+The plan file has been kept in sync throughout, so its code blocks are an
+as-built record rather than a proposal.

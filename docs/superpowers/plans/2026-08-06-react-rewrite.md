@@ -136,7 +136,26 @@ not type the `test` field.
 Create `src/test-setup.ts`:
 
 ```ts
+import { afterEach } from 'vitest';
 import '@testing-library/jest-dom/vitest';
+
+if (!globalThis.ResizeObserver) {
+  globalThis.ResizeObserver = class {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  } as unknown as typeof ResizeObserver;
+}
+
+// Vitest runs without `globals`, so Testing Library never registers its own
+// automatic cleanup and renders pile up across tests in the same file — the
+// second `render` in a file would find two of every element. Register it here,
+// but only where there is a DOM to clean: this file also loads for the
+// node-environment engine tests.
+if (typeof document !== 'undefined') {
+  const { cleanup } = await import('@testing-library/react');
+  afterEach(cleanup);
+}
 ```
 
 Add to `package.json` scripts:
@@ -228,13 +247,17 @@ Create `src/App.test.tsx`:
 ```tsx
 // @vitest-environment jsdom
 import { render, screen } from '@testing-library/react';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import App from './App';
+import { useGameStore } from './store/gameStore';
 
 describe('App', () => {
-  it('renders the game title', () => {
+  beforeEach(() => useGameStore.getState().reset());
+
+  it('shows the lobby when no game is running', () => {
     render(<App />);
-    expect(screen.getByText(/Gotta Chug/i)).toBeInTheDocument();
+    expect(screen.getByText(/Gotta Chug 'em All/i)).toBeInTheDocument();
+    expect(screen.getByPlaceholderText(/enter a name/i)).toBeInTheDocument();
   });
 });
 ```
@@ -603,6 +626,7 @@ Dex numbers are taken from the legacy `css/pokemon.css` background-image paths s
 Create `src/data/starters.ts`:
 
 ```ts
+import { assetUrl } from './assets';
 import type { StarterId } from './types';
 
 export interface Starter {
@@ -633,8 +657,8 @@ export const STARTERS: readonly Starter[] = Object.freeze(
       id,
       label,
       dex,
-      sprite: `/img/sprites/${dex}.png`,
-      animated: `/img/sprites/animated/${dex}.gif`,
+      sprite: assetUrl(`/img/sprites/${dex}.png`),
+      animated: assetUrl(`/img/sprites/animated/${dex}.gif`),
     });
   }),
 );
@@ -902,6 +926,7 @@ Expected: FAIL — "Failed to resolve import '../boards/original'".
 Create `src/data/boards/original.ts`:
 
 ```ts
+import { assetUrl } from '../assets';
 import type { Amount, Board, Effect, Square, SquareKind } from '../types';
 import coords from './original.coords.json';
 
@@ -1251,7 +1276,7 @@ const squares: readonly Square[] = Object.freeze(
 export const BOARD_ORIGINAL: Board = Object.freeze({
   id: 'original',
   name: 'Original',
-  image: '/img/board-original.webp',
+  image: assetUrl('/img/board-original.webp'),
   imageSize: 2216,
   squares,
 });
@@ -5257,6 +5282,7 @@ import { useGameStore } from '../../store/gameStore';
 import GameConfig from './GameConfig';
 import NameEntry from './NameEntry';
 import StarterPicker from './StarterPicker';
+import MuteButton from '../game/MuteButton';
 import { useLobbyStore } from './lobbyStore';
 
 export default function Lobby() {
@@ -5265,7 +5291,10 @@ export default function Lobby() {
 
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-lg flex-col gap-6 p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
-      <h1 className="font-pokemon text-3xl text-yellow">Gotta Chug 'em All</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="font-pokemon text-3xl text-yellow">Gotta Chug 'em All</h1>
+        <MuteButton />
+      </div>
       {step === 'names' && <NameEntry />}
       {step === 'starters' && <StarterPicker />}
       {step === 'config' && <GameConfig onStart={start} />}
@@ -5432,6 +5461,7 @@ Create `src/components/game/useTurnDriver.ts`:
 
 ```ts
 import { useEffect } from 'react';
+import { playSfx } from '../../audio/useAudio';
 import { useGameStore } from '../../store/gameStore';
 import type { Action, Phase } from '../../engine/types';
 
@@ -5467,6 +5497,11 @@ export function useTurnDriver(): void {
     const timer = setTimeout(() => dispatch(action), delay);
     return () => clearTimeout(timer);
   }, [phaseName, dispatch]);
+
+  useEffect(() => {
+    if (phaseName === 'rolling') playSfx('roll');
+    if (phaseName === 'gameOver') playSfx('win');
+  }, [phaseName]);
 }
 ```
 
@@ -5522,6 +5557,12 @@ Create `src/components/game/GameScreen.tsx`:
 
 ```tsx
 import BoardView from '../board/BoardView';
+import ControlSheet from './ControlSheet';
+import DiceRoller from './DiceRoller';
+import GameOver from './GameOver';
+import MuteButton from './MuteButton';
+import PromptModal from './PromptModal';
+import SquareModal from './SquareModal';
 import { activePlayer } from '../../engine/selectors';
 import { useGameStore } from '../../store/gameStore';
 import { useTurnDriver } from './useTurnDriver';
@@ -5539,7 +5580,10 @@ export default function GameScreen() {
     <div className="flex h-dvh flex-col bg-crust">
       <header className="flex items-center justify-between px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
         <span className="font-pokemon text-lg text-accent">{active.name}'s turn</span>
-        <span className="text-sm text-subtext">Turn {state.turnNumber}</span>
+        <span className="flex items-center gap-2 text-sm text-subtext">
+          Turn {state.turnNumber}
+          <MuteButton />
+        </span>
       </header>
 
       <div className="min-h-0 flex-1">
@@ -5550,6 +5594,12 @@ export default function GameScreen() {
           onTokenArrive={moving ? () => dispatch({ type: 'STEP_DONE' }) : undefined}
         />
       </div>
+
+      <ControlSheet />
+      <DiceRoller />
+      <SquareModal />
+      <PromptModal />
+      <GameOver />
     </div>
   );
 }
@@ -5603,7 +5653,7 @@ Create `src/components/game/__tests__/ControlSheet.test.tsx`:
 
 ```tsx
 // @vitest-environment jsdom
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, beforeEach } from 'vitest';
 import ControlSheet from '../ControlSheet';
@@ -5657,7 +5707,9 @@ describe('ControlSheet', () => {
     await user.click(screen.getByRole('button', { name: /scores & log/i }));
     expect(screen.getByRole('log')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: /close/i }));
-    expect(screen.queryByRole('log')).not.toBeInTheDocument();
+    // The sheet animates out, so it is still mounted the instant the click
+    // resolves; wait for AnimatePresence to finish removing it.
+    await waitFor(() => expect(screen.queryByRole('log')).not.toBeInTheDocument());
   });
 
   it('lists active statuses so nobody forgets they are confused', () => {
@@ -6152,8 +6204,9 @@ export default function SquareModal() {
   if (!state) return null;
 
   const active = activePlayer(state);
+  const phase = state.phase;
 
-  if (state.phase.name === 'landed') {
+  if (phase.name === 'landed') {
     const square = getSquare(BOARD_ORIGINAL, active.square);
     return (
       <Modal
@@ -6173,7 +6226,7 @@ export default function SquareModal() {
     );
   }
 
-  if (state.phase.name === 'note') {
+  if (phase.name === 'note') {
     return (
       <Modal
         title="House rule"
@@ -6187,14 +6240,14 @@ export default function SquareModal() {
           </button>
         }
       >
-        <p>{state.phase.text}</p>
+        <p>{phase.text}</p>
       </Modal>
     );
   }
 
-  if (state.phase.name === 'battle') {
-    const [mine, theirs] = state.phase.rolls;
-    const opponent = state.players.find((p) => p.id === state.phase.opponentId)!;
+  if (phase.name === 'battle') {
+    const [mine, theirs] = phase.rolls;
+    const opponent = state.players.find((p) => p.id === phase.opponentId)!;
     const diff = Math.abs(mine - theirs);
     const outcome =
       diff === 0
@@ -6511,7 +6564,9 @@ export default function PromptModal() {
             players={others}
             tally={tally}
             disabled={remaining <= 0}
-            onPick={(id) => setTally((t) => ({ ...t, [id]: (t[id] ?? 0) + 1 }))}
+            // One tap hands a player the prompt's full per-player amount, so
+            // "2 drinks to 1 player" is one tap rather than two on the same face.
+            onPick={(id) => setTally((t) => ({ ...t, [id]: (t[id] ?? 0) + prompt.drinks }))}
           />
         </Modal>
       );
@@ -6618,12 +6673,15 @@ export default function PromptModal() {
                 Not on the board
               </button>
               <button type="button" className={PRIMARY} onClick={() => resolve({ id: 'pokeballCatch', onBoard: true })}>
-                Caught it
+                Throw for it
               </button>
             </>
           }
         >
-          <p>If your favourite Pokémon is on the board you can catch it. If not, sadly drink 3.</p>
+          <p>
+            If your favourite Pokémon is on the board, throw: a 1-3 catches it, a 4-6 and it got
+            away for 3 drinks. If it is not on the board, sadly drink 3.
+          </p>
         </Modal>
       );
 
@@ -6942,6 +7000,7 @@ Create `src/audio/useAudio.ts`:
 
 ```ts
 import { create } from 'zustand';
+import { assetUrl } from '../data/assets';
 
 export type SfxName = 'roll' | 'move' | 'drink' | 'win';
 
@@ -6951,10 +7010,10 @@ export type SfxName = 'roll' | 'move' | 'drink' | 'win';
  * change only this map — nothing else needs to know.
  */
 const SFX_SRC: Record<SfxName, string> = {
-  roll: '/audio/pokerap.mp3',
-  move: '/audio/pokerap.mp3',
-  drink: '/audio/pokerap.mp3',
-  win: '/audio/pokerap.mp3',
+  roll: assetUrl('/audio/pokerap.mp3'),
+  move: assetUrl('/audio/pokerap.mp3'),
+  drink: assetUrl('/audio/pokerap.mp3'),
+  win: assetUrl('/audio/pokerap.mp3'),
 };
 
 const STORAGE_KEY = 'gcea:muted';
