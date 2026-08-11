@@ -1,6 +1,7 @@
 import BoardView from '../board/BoardView';
 import ControlSheet from './ControlSheet';
 import DiceRoller from './DiceRoller';
+import PromptModal from './PromptModal';
 import SquareModal from './SquareModal';
 import { activePlayer } from '../../engine/selectors';
 import { useGameStore } from '../../store/gameStore';
@@ -34,6 +35,7 @@ export default function GameScreen() {
       <ControlSheet />
       <DiceRoller />
       <SquareModal />
+      <PromptModal />
     </div>
   );
 }
