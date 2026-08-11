@@ -1,4 +1,5 @@
 import BoardView from '../board/BoardView';
+import ControlSheet from './ControlSheet';
 import { activePlayer } from '../../engine/selectors';
 import { useGameStore } from '../../store/gameStore';
 import { useTurnDriver } from './useTurnDriver';
@@ -27,6 +28,8 @@ export default function GameScreen() {
           onTokenArrive={moving ? () => dispatch({ type: 'STEP_DONE' }) : undefined}
         />
       </div>
+
+      <ControlSheet />
     </div>
   );
 }
