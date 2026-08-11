@@ -92,6 +92,8 @@ export interface GameState {
   readonly phase: Phase;
   /** Effects still to apply for the current square. Drained by `drainQueue`. */
   readonly queue: readonly Effect[];
+  /** Phase to enter when the queue empties. Turn-start upkeep exits to 'idle'. */
+  readonly queueExit: 'idle' | 'turnEnd';
   /** Values bound by `roll`/`rollBranch`/`rollWhile`, cleared each turn. */
   readonly vars: Readonly<Record<string, number>>;
   readonly lastRoll: number | null;

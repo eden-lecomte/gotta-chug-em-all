@@ -35,6 +35,7 @@ export function makeState(overrides: Partial<GameState> = {}): GameState {
     turnNumber: 1,
     phase: { name: 'resolving' },
     queue: [],
+    queueExit: 'turnEnd',
     vars: {},
     lastRoll: null,
     log: [],

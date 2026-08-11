@@ -297,7 +297,7 @@ export function drainQueue(state: GameState): GameState {
     current = applyEffect({ ...current, queue: rest }, head);
   }
   if (current.queue.length === 0 && current.phase.name === 'resolving') {
-    return { ...current, phase: { name: 'turnEnd' } };
+    return { ...current, phase: { name: current.queueExit } };
   }
   return current;
 }
