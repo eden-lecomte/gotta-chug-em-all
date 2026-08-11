@@ -36,6 +36,14 @@ describe('board original', () => {
     ]);
   });
 
+  it('rounds both halves of Gary up, as the square text promises', () => {
+    expect(getSquare(BOARD_ORIGINAL, 12).effects).toEqual([
+      { kind: 'roll', as: 'gary' },
+      { kind: 'drink', target: 'self', amount: { kind: 'half', of: { kind: 'var', name: 'gary' }, round: 'up' } },
+      { kind: 'give', amount: { kind: 'half', of: { kind: 'var', name: 'gary' }, round: 'up' }, players: { kind: 'fixed', value: 1 } },
+    ]);
+  });
+
   it('fixes Electabuzz so it costs exactly one turn', () => {
     expect(getSquare(BOARD_ORIGINAL, 54).effects).toEqual([
       { kind: 'missTurn', amount: { kind: 'fixed', value: 1 } },

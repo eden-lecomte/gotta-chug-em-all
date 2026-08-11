@@ -95,7 +95,13 @@ export function resolvePrompt(state: GameState, result: PromptResult): GameState
       return resume(pushLog(withLoss, 'turn', `Chug-off won by ${result.winnerId}`));
     }
 
-    case 'pokeballCatch':
-      return resume(state, result.onBoard ? [] : [drink(3)]);
+    case 'pokeballCatch': {
+      // Not on the board is a flat 3. On the board, you throw for it: 1-3
+      // catches it, 4-6 and it got away.
+      if (!result.onBoard) return resume(state, [drink(3)]);
+      const [face, seed] = rollDie(state.seed);
+      const rolled = pushLog({ ...state, seed, lastRoll: face }, 'roll', `Pokéball roll: ${face}`);
+      return resume(rolled, face <= 3 ? [] : [drink(3)]);
+    }
   }
 }

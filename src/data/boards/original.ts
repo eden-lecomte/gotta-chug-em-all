@@ -61,12 +61,12 @@ const RULES: Record<number, { kind?: SquareKind; effects: Effect[] }> = {
 
   11: { effects: [{ kind: 'moveTo', square: 28 }] },
 
-  // Gary: roll, drink half rounded up, give half rounded down.
+  // Gary: roll, then drink half and give half, both rounded up as the text says.
   12: {
     effects: [
       { kind: 'roll', as: 'gary' },
       { kind: 'drink', target: 'self', amount: { kind: 'half', of: { kind: 'var', name: 'gary' }, round: 'up' } },
-      { kind: 'give', amount: { kind: 'half', of: { kind: 'var', name: 'gary' }, round: 'down' }, players: n(1) },
+      { kind: 'give', amount: { kind: 'half', of: { kind: 'var', name: 'gary' }, round: 'up' }, players: n(1) },
     ],
   },
 

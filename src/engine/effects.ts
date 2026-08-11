@@ -49,6 +49,69 @@ function clampSquare(square: number): number {
   return Math.min(LAST_SQUARE, Math.max(0, square));
 }
 
+/**
+ * What Metronome copies from another square: what it makes you drink or give,
+ * plus the rolls those amounts depend on. Movement, statuses, prompts, flavour
+ * and a nested Metronome are dropped — square 9 promises only "drink or give
+ * what it says". Dropping a `roll` while keeping the `drink` that reads its
+ * variable would throw on an unbound var, so binders are always kept.
+ */
+function copyableEffects(effects: readonly Effect[]): Effect[] {
+  const out: Effect[] = [];
+  for (const effect of effects) {
+    switch (effect.kind) {
+      case 'drink':
+      case 'give':
+      case 'roll':
+      case 'rollWhile':
+        out.push(effect);
+        break;
+      case 'rollBranch':
+        out.push({
+          ...effect,
+          branches: effect.branches.map((b) => ({ ...b, effects: copyableEffects(b.effects) })),
+        });
+        break;
+      case 'rollTimes':
+        out.push({
+          ...effect,
+          onSuccess: copyableEffects(effect.onSuccess),
+          onFail: copyableEffects(effect.onFail),
+        });
+        break;
+      case 'ifAnyPlayerHasStatus':
+        out.push({
+          ...effect,
+          then: copyableEffects(effect.then),
+          otherwise: copyableEffects(effect.otherwise),
+        });
+        break;
+      default:
+        break;
+    }
+  }
+  return out;
+}
+
+/** Whether a copied tree can still make anyone drink, at any branch depth. */
+function paysADrink(effects: readonly Effect[]): boolean {
+  return effects.some((effect) => {
+    switch (effect.kind) {
+      case 'drink':
+      case 'give':
+        return true;
+      case 'rollBranch':
+        return effect.branches.some((b) => paysADrink(b.effects));
+      case 'rollTimes':
+        return paysADrink(effect.onSuccess) || paysADrink(effect.onFail);
+      case 'ifAnyPlayerHasStatus':
+        return paysADrink(effect.then) || paysADrink(effect.otherwise);
+      default:
+        return false;
+    }
+  });
+}
+
 export function matchesCond(face: number, cond: BranchCond): boolean {
   return 'faces' in cond ? cond.faces.includes(face) : (face % 2 === 0) === (cond.parity === 'even');
 }
@@ -183,12 +246,13 @@ export function applyEffect(state: GameState, effect: Effect): GameState {
     case 'randomSquare': {
       const [index, seed] = nextInt(state.seed, BOARD_ORIGINAL.squares.length);
       const square = getSquare(BOARD_ORIGINAL, index);
-      // Metronome copies another square. Squares with no mechanical effect
-      // (pure flavour or Start) fall back to the legacy "just drink 2" rule.
-      const copied =
-        square.effects.length > 0
-          ? square.effects
-          : ([{ kind: 'drink', target: 'self', amount: { kind: 'fixed', value: 2 } }] as const);
+      // Metronome copies what the square makes you drink or give. A square that
+      // pays nothing — flavour, movement, a status, or Start — falls back to
+      // the legacy "if no drink is given or taken, just drink 2" rule.
+      const copyable = copyableEffects(square.effects);
+      const copied = paysADrink(copyable)
+        ? copyable
+        : ([{ kind: 'drink', target: 'self', amount: { kind: 'fixed', value: 2 } }] as const);
       const next = { ...state, seed, queue: [...copied, ...state.queue] };
       return pushLog(next, 'info', `Metronome copied square ${index}: ${square.text}`);
     }

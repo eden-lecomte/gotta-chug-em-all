@@ -2,6 +2,15 @@ import { describe, it, expect } from 'vitest';
 import { applyEffect, drainQueue } from '../effects';
 import { resolvePrompt } from '../prompts';
 import { makePlayer, makeState } from './factories';
+import { rollDie } from '../rng';
+
+/** Find a seed whose next die roll is exactly `face`. */
+function seedFor(face: number): number {
+  for (let seed = 1; seed < 100_000; seed++) {
+    if (rollDie(seed)[0] === face) return seed;
+  }
+  throw new Error(`No seed produced face ${face}`);
+}
 
 describe('give effect', () => {
   it('parks on a givePlayers prompt with the resolved drink count', () => {
@@ -118,6 +127,15 @@ describe('question prompts', () => {
     const parked = applyEffect(makeState(), { kind: 'prompt', prompt: 'pokeballCatch' });
     const next = drainQueue(resolvePrompt(parked, { id: 'pokeballCatch', onBoard: false }));
     expect(next.players[0].drinks).toBe(3);
+  });
+
+  it('Pokeball: on the board, a 1-3 catches it free and a 4-6 costs 3', () => {
+    const attempt = (seed: number) => {
+      const parked = applyEffect(makeState({ seed }), { kind: 'prompt', prompt: 'pokeballCatch' });
+      return drainQueue(resolvePrompt(parked, { id: 'pokeballCatch', onBoard: true }));
+    };
+    expect(attempt(seedFor(2)).players[0].drinks).toBe(0);
+    expect(attempt(seedFor(5)).players[0].drinks).toBe(3);
   });
 
   it('rejects a result that does not match the pending prompt', () => {

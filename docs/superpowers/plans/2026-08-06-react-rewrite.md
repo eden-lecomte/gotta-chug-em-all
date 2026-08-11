@@ -857,6 +857,14 @@ describe('board original', () => {
     ]);
   });
 
+  it('rounds both halves of Gary up, as the square text promises', () => {
+    expect(getSquare(BOARD_ORIGINAL, 12).effects).toEqual([
+      { kind: 'roll', as: 'gary' },
+      { kind: 'drink', target: 'self', amount: { kind: 'half', of: { kind: 'var', name: 'gary' }, round: 'up' } },
+      { kind: 'give', amount: { kind: 'half', of: { kind: 'var', name: 'gary' }, round: 'up' }, players: { kind: 'fixed', value: 1 } },
+    ]);
+  });
+
   it('fixes Electabuzz so it costs exactly one turn', () => {
     expect(getSquare(BOARD_ORIGINAL, 54).effects).toEqual([
       { kind: 'missTurn', amount: { kind: 'fixed', value: 1 } },
@@ -956,12 +964,12 @@ const RULES: Record<number, { kind?: SquareKind; effects: Effect[] }> = {
 
   11: { effects: [{ kind: 'moveTo', square: 28 }] },
 
-  // Gary: roll, drink half rounded up, give half rounded down.
+  // Gary: roll, then drink half and give half, both rounded up as the text says.
   12: {
     effects: [
       { kind: 'roll', as: 'gary' },
       { kind: 'drink', target: 'self', amount: { kind: 'half', of: { kind: 'var', name: 'gary' }, round: 'up' } },
-      { kind: 'give', amount: { kind: 'half', of: { kind: 'var', name: 'gary' }, round: 'down' }, players: n(1) },
+      { kind: 'give', amount: { kind: 'half', of: { kind: 'var', name: 'gary' }, round: 'up' }, players: n(1) },
     ],
   },
 
@@ -1282,7 +1290,7 @@ RGB data stays byte-identical.
 - [ ] **Step 7: Run the test to verify it passes**
 
 Run: `npx vitest run src/data/__tests__/original.test.ts`
-Expected: PASS, 9 tests.
+Expected: PASS, 10 tests.
 
 - [ ] **Step 8: Commit**
 
@@ -1469,7 +1477,7 @@ describe('resolveAmount', () => {
     expect(() => resolveAmount({ kind: 'var', name: 'nope' }, ctx)).toThrow(/nope/);
   });
 
-  it('rounds half up and half down as asked (Gary: drink 3, give 2 on a 5)', () => {
+  it('rounds half up and half down as asked', () => {
     const gary = { kind: 'var', name: 'gary' } as const;
     expect(resolveAmount({ kind: 'half', of: gary, round: 'up' }, ctx)).toBe(3);
     expect(resolveAmount({ kind: 'half', of: gary, round: 'down' }, ctx)).toBe(2);
@@ -2232,10 +2240,30 @@ describe('randomSquare effect (Clefairy)', () => {
     expect(next.log.at(-1)!.text).toMatch(/Metronome/i);
   });
 
-  it('copies the chosen square’s effects verbatim', () => {
+  it('copies what the chosen square makes you drink', () => {
     // Square 52 (Fuchsia Gym) is a plain "drink 3", so the copy is unambiguous.
     const next = applyEffect(makeState({ seed: seedForSquare(52) }), { kind: 'randomSquare' });
     expect(next.queue).toEqual(BOARD_ORIGINAL.squares[52].effects);
+  });
+
+  it('keeps the roll that a copied amount depends on', () => {
+    // Square 12 (Gary) binds `gary` and then spends it. Dropping the binder
+    // would make resolveAmount throw on an unbound variable mid-turn.
+    const state = applyEffect(makeState({ seed: seedForSquare(12) }), { kind: 'randomSquare' });
+    expect(state.queue.map((e) => e.kind)).toEqual(['roll', 'drink', 'give']);
+    expect(() => drainQueue(state)).not.toThrow();
+  });
+
+  it('drops movement, statuses and prompts rather than copying them', () => {
+    // Square 25 (Haunter) only moves another player, so there is nothing to
+    // drink or give and the legacy fallback applies.
+    const next = applyEffect(makeState({ seed: seedForSquare(25) }), { kind: 'randomSquare' });
+    expect(next.queue).toEqual([{ kind: 'drink', target: 'self', amount: { kind: 'fixed', value: 2 } }]);
+  });
+
+  it('never teleports the player by copying an Abra square', () => {
+    const next = applyEffect(makeState({ seed: seedForSquare(11) }), { kind: 'randomSquare' });
+    expect(JSON.stringify(next.queue)).not.toContain('moveTo');
   });
 
   it('falls back to drinking 2 when the chosen square has no effects', () => {
@@ -2287,9 +2315,76 @@ import { nextInt, rollDie } from './rng';
 import { getSquare } from '../data/boards/original';
 ```
 
-Add this exported helper above `applyEffect`:
+Add these helpers above `applyEffect`. `copyableEffects`/`paysADrink` implement
+the agreed Metronome rule: square 9 copies only what another square makes you
+drink or give, never its movement, statuses or prompts, and pays 2 when the
+copy would pay nothing. Roll binders are kept regardless, since dropping a
+`roll` while keeping the `drink` that reads its variable throws at runtime.
 
 ```ts
+/**
+ * What Metronome copies from another square: what it makes you drink or give,
+ * plus the rolls those amounts depend on. Movement, statuses, prompts, flavour
+ * and a nested Metronome are dropped — square 9 promises only "drink or give
+ * what it says". Dropping a `roll` while keeping the `drink` that reads its
+ * variable would throw on an unbound var, so binders are always kept.
+ */
+function copyableEffects(effects: readonly Effect[]): Effect[] {
+  const out: Effect[] = [];
+  for (const effect of effects) {
+    switch (effect.kind) {
+      case 'drink':
+      case 'give':
+      case 'roll':
+      case 'rollWhile':
+        out.push(effect);
+        break;
+      case 'rollBranch':
+        out.push({
+          ...effect,
+          branches: effect.branches.map((b) => ({ ...b, effects: copyableEffects(b.effects) })),
+        });
+        break;
+      case 'rollTimes':
+        out.push({
+          ...effect,
+          onSuccess: copyableEffects(effect.onSuccess),
+          onFail: copyableEffects(effect.onFail),
+        });
+        break;
+      case 'ifAnyPlayerHasStatus':
+        out.push({
+          ...effect,
+          then: copyableEffects(effect.then),
+          otherwise: copyableEffects(effect.otherwise),
+        });
+        break;
+      default:
+        break;
+    }
+  }
+  return out;
+}
+
+/** Whether a copied tree can still make anyone drink, at any branch depth. */
+function paysADrink(effects: readonly Effect[]): boolean {
+  return effects.some((effect) => {
+    switch (effect.kind) {
+      case 'drink':
+      case 'give':
+        return true;
+      case 'rollBranch':
+        return effect.branches.some((b) => paysADrink(b.effects));
+      case 'rollTimes':
+        return paysADrink(effect.onSuccess) || paysADrink(effect.onFail);
+      case 'ifAnyPlayerHasStatus':
+        return paysADrink(effect.then) || paysADrink(effect.otherwise);
+      default:
+        return false;
+    }
+  });
+}
+
 export function matchesCond(face: number, cond: BranchCond): boolean {
   return 'faces' in cond ? cond.faces.includes(face) : (face % 2 === 0) === (cond.parity === 'even');
 }
@@ -2355,12 +2450,13 @@ Then replace the `default:` clause of the `applyEffect` switch with these cases,
     case 'randomSquare': {
       const [index, seed] = nextInt(state.seed, BOARD_ORIGINAL.squares.length);
       const square = getSquare(BOARD_ORIGINAL, index);
-      // Metronome copies another square. Squares with no mechanical effect
-      // (pure flavour or Start) fall back to the legacy "just drink 2" rule.
-      const copied =
-        square.effects.length > 0
-          ? square.effects
-          : ([{ kind: 'drink', target: 'self', amount: { kind: 'fixed', value: 2 } }] as const);
+      // Metronome copies what the square makes you drink or give. A square that
+      // pays nothing — flavour, movement, a status, or Start — falls back to
+      // the legacy "if no drink is given or taken, just drink 2" rule.
+      const copyable = copyableEffects(square.effects);
+      const copied = paysADrink(copyable)
+        ? copyable
+        : ([{ kind: 'drink', target: 'self', amount: { kind: 'fixed', value: 2 } }] as const);
       const next = { ...state, seed, queue: [...copied, ...state.queue] };
       return pushLog(next, 'info', `Metronome copied square ${index}: ${square.text}`);
     }
@@ -2375,7 +2471,7 @@ Then replace the `default:` clause of the `applyEffect` switch with these cases,
 - [ ] **Step 4: Run the test to verify it passes**
 
 Run: `npx vitest run src/engine/__tests__/effects.random.test.ts`
-Expected: PASS, 17 tests.
+Expected: PASS, 20 tests.
 
 - [ ] **Step 5: Run the whole suite to check nothing regressed**
 
@@ -2415,6 +2511,15 @@ import { describe, it, expect } from 'vitest';
 import { applyEffect, drainQueue } from '../effects';
 import { resolvePrompt } from '../prompts';
 import { makePlayer, makeState } from './factories';
+import { rollDie } from '../rng';
+
+/** Find a seed whose next die roll is exactly `face`. */
+function seedFor(face: number): number {
+  for (let seed = 1; seed < 100_000; seed++) {
+    if (rollDie(seed)[0] === face) return seed;
+  }
+  throw new Error(`No seed produced face ${face}`);
+}
 
 describe('give effect', () => {
   it('parks on a givePlayers prompt with the resolved drink count', () => {
@@ -2531,6 +2636,15 @@ describe('question prompts', () => {
     const parked = applyEffect(makeState(), { kind: 'prompt', prompt: 'pokeballCatch' });
     const next = drainQueue(resolvePrompt(parked, { id: 'pokeballCatch', onBoard: false }));
     expect(next.players[0].drinks).toBe(3);
+  });
+
+  it('Pokeball: on the board, a 1-3 catches it free and a 4-6 costs 3', () => {
+    const attempt = (seed: number) => {
+      const parked = applyEffect(makeState({ seed }), { kind: 'prompt', prompt: 'pokeballCatch' });
+      return drainQueue(resolvePrompt(parked, { id: 'pokeballCatch', onBoard: true }));
+    };
+    expect(attempt(seedFor(2)).players[0].drinks).toBe(0);
+    expect(attempt(seedFor(5)).players[0].drinks).toBe(3);
   });
 
   it('rejects a result that does not match the pending prompt', () => {
@@ -2686,8 +2800,14 @@ export function resolvePrompt(state: GameState, result: PromptResult): GameState
       return resume(pushLog(withLoss, 'turn', `Chug-off won by ${result.winnerId}`));
     }
 
-    case 'pokeballCatch':
-      return resume(state, result.onBoard ? [] : [drink(3)]);
+    case 'pokeballCatch': {
+      // Not on the board is a flat 3. On the board, you throw for it: 1-3
+      // catches it, 4-6 and it got away.
+      if (!result.onBoard) return resume(state, [drink(3)]);
+      const [face, seed] = rollDie(state.seed);
+      const rolled = pushLog({ ...state, seed, lastRoll: face }, 'roll', `Pokéball roll: ${face}`);
+      return resume(rolled, face <= 3 ? [] : [drink(3)]);
+    }
   }
 }
 ```
@@ -2695,7 +2815,7 @@ export function resolvePrompt(state: GameState, result: PromptResult): GameState
 - [ ] **Step 5: Run the test to verify it passes**
 
 Run: `npx vitest run src/engine/__tests__/prompts.test.ts`
-Expected: PASS, 14 tests.
+Expected: PASS, 15 tests.
 
 - [ ] **Step 6: Commit**
 

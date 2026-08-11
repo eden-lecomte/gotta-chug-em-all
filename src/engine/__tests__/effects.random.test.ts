@@ -156,10 +156,30 @@ describe('randomSquare effect (Clefairy)', () => {
     expect(next.log.at(-1)!.text).toMatch(/Metronome/i);
   });
 
-  it('copies the chosen square’s effects verbatim', () => {
+  it('copies what the chosen square makes you drink', () => {
     // Square 52 (Fuchsia Gym) is a plain "drink 3", so the copy is unambiguous.
     const next = applyEffect(makeState({ seed: seedForSquare(52) }), { kind: 'randomSquare' });
     expect(next.queue).toEqual(BOARD_ORIGINAL.squares[52].effects);
+  });
+
+  it('keeps the roll that a copied amount depends on', () => {
+    // Square 12 (Gary) binds `gary` and then spends it. Dropping the binder
+    // would make resolveAmount throw on an unbound variable mid-turn.
+    const state = applyEffect(makeState({ seed: seedForSquare(12) }), { kind: 'randomSquare' });
+    expect(state.queue.map((e) => e.kind)).toEqual(['roll', 'drink', 'give']);
+    expect(() => drainQueue(state)).not.toThrow();
+  });
+
+  it('drops movement, statuses and prompts rather than copying them', () => {
+    // Square 25 (Haunter) only moves another player, so there is nothing to
+    // drink or give and the legacy fallback applies.
+    const next = applyEffect(makeState({ seed: seedForSquare(25) }), { kind: 'randomSquare' });
+    expect(next.queue).toEqual([{ kind: 'drink', target: 'self', amount: { kind: 'fixed', value: 2 } }]);
+  });
+
+  it('never teleports the player by copying an Abra square', () => {
+    const next = applyEffect(makeState({ seed: seedForSquare(11) }), { kind: 'randomSquare' });
+    expect(JSON.stringify(next.queue)).not.toContain('moveTo');
   });
 
   it('falls back to drinking 2 when the chosen square has no effects', () => {

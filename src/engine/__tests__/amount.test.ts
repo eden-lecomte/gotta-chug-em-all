@@ -29,7 +29,7 @@ describe('resolveAmount', () => {
     expect(() => resolveAmount({ kind: 'var', name: 'nope' }, ctx)).toThrow(/nope/);
   });
 
-  it('rounds half up and half down as asked (Gary: drink 3, give 2 on a 5)', () => {
+  it('rounds half up and half down as asked', () => {
     const gary = { kind: 'var', name: 'gary' } as const;
     expect(resolveAmount({ kind: 'half', of: gary, round: 'up' }, ctx)).toBe(3);
     expect(resolveAmount({ kind: 'half', of: gary, round: 'down' }, ctx)).toBe(2);
