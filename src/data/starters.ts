@@ -1,3 +1,4 @@
+import { assetUrl } from './assets';
 import type { StarterId } from './types';
 
 export interface Starter {
@@ -28,8 +29,8 @@ export const STARTERS: readonly Starter[] = Object.freeze(
       id,
       label,
       dex,
-      sprite: `/img/sprites/${dex}.png`,
-      animated: `/img/sprites/animated/${dex}.gif`,
+      sprite: assetUrl(`/img/sprites/${dex}.png`),
+      animated: assetUrl(`/img/sprites/animated/${dex}.gif`),
     });
   }),
 );

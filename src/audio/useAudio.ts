@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { assetUrl } from '../data/assets';
 
 export type SfxName = 'roll' | 'move' | 'drink' | 'win';
 
@@ -8,10 +9,10 @@ export type SfxName = 'roll' | 'move' | 'drink' | 'win';
  * change only this map — nothing else needs to know.
  */
 const SFX_SRC: Record<SfxName, string> = {
-  roll: '/audio/pokerap.mp3',
-  move: '/audio/pokerap.mp3',
-  drink: '/audio/pokerap.mp3',
-  win: '/audio/pokerap.mp3',
+  roll: assetUrl('/audio/pokerap.mp3'),
+  move: assetUrl('/audio/pokerap.mp3'),
+  drink: assetUrl('/audio/pokerap.mp3'),
+  win: assetUrl('/audio/pokerap.mp3'),
 };
 
 const STORAGE_KEY = 'gcea:muted';

@@ -1,3 +1,4 @@
+import { assetUrl } from '../assets';
 import type { Amount, Board, Effect, Square, SquareKind } from '../types';
 import coords from './original.coords.json';
 
@@ -347,7 +348,7 @@ const squares: readonly Square[] = Object.freeze(
 export const BOARD_ORIGINAL: Board = Object.freeze({
   id: 'original',
   name: 'Original',
-  image: '/img/board-original.webp',
+  image: assetUrl('/img/board-original.webp'),
   imageSize: 2216,
   squares,
 });
