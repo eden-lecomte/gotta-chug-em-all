@@ -3726,6 +3726,21 @@ describe('trainer battles', () => {
     throw new Error('No battle occurred across 500 seeds');
   });
 
+  it('hands back to the landed flow so the square card still shows', () => {
+    const state = makeState({
+      config: battleConfig,
+      phase: { name: 'idle' },
+      players: [makePlayer('a', { square: 0 }), makePlayer('b', { square: 1 })],
+    });
+    for (let seed = 1; seed < 500; seed++) {
+      const landed = walkTo({ ...state, seed });
+      if (landed.phase.name !== 'battle') continue;
+      expect(reduce(landed, { type: 'ACK_BATTLE' }).phase).toEqual({ name: 'landed' });
+      return;
+    }
+    throw new Error('No battle occurred across 500 seeds');
+  });
+
   it('never battles when the config disables it', () => {
     const state = makeState({
       config: { ...battleConfig, trainerBattles: false },
@@ -3745,13 +3760,25 @@ describe('trainer battles', () => {
     });
     expect(reduce(state, { type: 'STEP_DONE' }).phase.name).not.toBe('battle');
   });
+
+  it('never battles a player who has already finished', () => {
+    const state = makeState({
+      config: battleConfig,
+      phase: { name: 'moving', remaining: 1 },
+      players: [
+        makePlayer('a', { square: 40 }),
+        makePlayer('b', { square: 41, finishedAtTurn: 3 }),
+      ],
+    });
+    expect(reduce(state, { type: 'STEP_DONE' }).phase).toEqual({ name: 'landed' });
+  });
 });
 ```
 
 - [ ] **Step 2: Run the test to verify it fails**
 
 Run: `npx vitest run src/engine/__tests__/battle.test.ts`
-Expected: FAIL — the phase is `landed`, never `battle`.
+Expected: FAIL — the phase is `landed`, never `battle`. (6 tests total once passing.)
 
 - [ ] **Step 3: Add the battle check to `STEP_DONE`**
 
@@ -3971,6 +3998,15 @@ describe('a full game', () => {
     playToCompletion(createGame(input));
     expect(JSON.stringify(BOARD_ORIGINAL)).toBe(before);
   });
+
+  it('finishes from a hundred different seeds without stalling', () => {
+    // The single-seed test above only proves one path through the board. This
+    // is what catches a phase transition that only a rare square reaches.
+    for (let seed = 1; seed <= 100; seed++) {
+      const final = playToCompletion(createGame({ ...input, seed }));
+      expect(final.phase).toEqual({ name: 'gameOver' });
+    }
+  });
 });
 ```
 
@@ -4059,7 +4095,7 @@ export function currentSquare(state: GameState): Square {
   return getSquare(BOARD_ORIGINAL, activePlayer(state).square);
 }
 
-export function squareOf(state: GameState, player: Player): Square {
+export function squareOf(player: Player): Square {
   return getSquare(BOARD_ORIGINAL, player.square);
 }
 
@@ -4084,7 +4120,7 @@ export function playersOnSquare(state: GameState, squareId: number): Player[] {
 - [ ] **Step 5: Run the test to verify it passes**
 
 Run: `npx vitest run src/engine/__tests__/integration.test.ts`
-Expected: PASS, 10 tests.
+Expected: PASS, 11 tests.
 
 If "Stalled in phase X" is thrown, the reducer is missing a transition out of phase X — fix the reducer, not the test.
 

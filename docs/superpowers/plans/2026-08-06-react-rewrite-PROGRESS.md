@@ -9,12 +9,12 @@ jQuery game and must not be merged into until Task 26)
 **Base commit (pre-rewrite):** `2c81ca2`, also tagged **`v0-jquery`**
 **Method as planned:** superpowers:subagent-driven-development — fresh
 implementer subagent per task, task review after each, broad review at the end.
-**Method actually used for Tasks 2-11:** direct execution (see "Deviation from
+**Method actually used for Tasks 2-13:** direct execution (see "Deviation from
 the SDD method" below).
 
 ---
 
-## Status: 11 of 26 tasks complete
+## Status: 13 of 26 tasks complete
 
 | Task | Status | Commits |
 |---|---|---|
@@ -29,8 +29,10 @@ the SDD method" below).
 | 9. Effect interpreter — prompts and player input | ✅ complete (1 deviation) | `48dbf7d` |
 | 10. Status lifecycle | ✅ complete (1 deviation) | `653057f` |
 | 11. Turn machine and reducer | ✅ complete (1 deviation) | `b0890bf` |
-| 12. Trainer battles | ⬜ next | — |
-| 13-26 | ⬜ pending | — |
+| 12. Trainer battles | ✅ complete | `7d28f54` |
+| 13. Game setup and full-game integration test | ✅ complete (2 deviations) | `b1a12bc` |
+| 14. Zustand store | ⬜ next | — |
+| 15-26 | ⬜ pending | — |
 
 ### Task 1 — what landed
 
@@ -362,6 +364,39 @@ redundant: the queue is drained both for square effects (which end the turn)
 and for turn-start upkeep (which must land back on `idle` so the player can
 roll). A prompt can pause either one, so the exit phase has to be serializable
 state rather than a parameter.
+
+### Tasks 12 and 13 — what landed
+
+**Task 12 (trainer battles, `7d28f54`)** went in as planned: landing on an
+occupied square parks on `battle`, both trainers roll, the lower roll drinks the
+difference, and `ACK_BATTLE` hands back to `landed` so the square's own rule
+still runs. Start is excluded and a finished player cannot be challenged.
+
+**Task 13 (`b1a12bc`) found the worst bug so far, and it was in Task 11.**
+
+`DISMISS_SQUARE` on the final square marked the player finished but left the
+phase on `landed`. Any driver that dispatches on phase — which is exactly what
+the UI will do — re-finishes that player forever. **19,546 of the integration
+test's 20,000 ticks went into that loop.** It reported as "did not finish"
+rather than "stalled" because each pass appends a log line, so the state is
+never reference-equal and the driver's stall guard never fires.
+
+Task 11's own winning test missed it because it called `END_TURN` by hand, and
+`END_TURN` happens to accept `landed`. **A phase that only the test's manual
+sequencing escapes is exactly the shape of bug the integration test exists to
+catch** — worth remembering for Tasks 14-25, where the UI becomes the driver.
+
+Two smaller plan errors fixed at the same time:
+
+- **`selectors.ts` did not compile.** `squareOf(state, player)` never reads
+  `state`, which `noUnusedParameters` rejects. Nothing in the plan calls it, so
+  the parameter is gone rather than underscored.
+- **`npm run build` did not typecheck** — it was bare `vite build`, so the error
+  above would have shipped. It is now `tsc -b --noEmit && vite build`. Worth
+  knowing before Task 26: the build is now the gate, not just the bundler.
+
+The integration test also runs 100 seeds rather than the plan's one, since a
+single seed only proves one path across the board.
 
 ### Open finding from Task 9: Pokéball loses half its rule (resolved in `05ef6c8`)
 
